@@ -3,6 +3,13 @@ import { Sidebar } from "@/components/Sidebar";
 import { Dashboard } from "@/components/Dashboard";
 import { BedManagement } from "@/components/BedManagement";
 import { PatientManagement } from "@/components/PatientManagement";
+import { Appointments } from "@/components/Appointments";
+import { Admissions } from "@/components/Admissions";
+import { Orders } from "@/components/Orders";
+import { NursingStation } from "@/components/NursingStation";
+import { Medications } from "@/components/Medications";
+import { Billing } from "@/components/Billing";
+import { StaffScheduling } from "@/components/StaffScheduling";
 import { Button } from "@/components/ui/button";
 import { User, ChevronDown, Bell } from "lucide-react";
 import {
@@ -24,6 +31,20 @@ const Index = () => {
         return <BedManagement />;
       case "patients":
         return <PatientManagement />;
+      case "appointments":
+        return <Appointments />;
+      case "admissions":
+        return <Admissions />;
+      case "orders":
+        return <Orders />;
+      case "nursing":
+        return <NursingStation />;
+      case "medications":
+        return <Medications />;
+      case "billing":
+        return <Billing />;
+      case "staff":
+        return <StaffScheduling />;
       case "dashboard":
       default:
         return <Dashboard />;
