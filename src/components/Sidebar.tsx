@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -45,12 +45,6 @@ interface SidebarProps {
 
 export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const location = useLocation();
-
-  const isActive = (path: string) => {
-    if (path === "/") return location.pathname === "/";
-    return location.pathname.startsWith(path);
-  };
 
   return (
     <aside
@@ -92,23 +86,27 @@ export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
           <NavLink
             key={item.title}
             to={item.url}
-            className={({ isActive: linkActive }) =>
+            className={({ isActive }) =>
               cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
-                linkActive || isActive(item.url)
+                isActive
                   ? "bg-primary/10 text-primary border border-primary/20 shadow-medical"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
               )
             }
           >
-            <item.icon
-              className={cn(
-                "w-5 h-5 transition-colors duration-200",
-                isActive(item.url) ? "text-primary" : item.color
-              )}
-            />
-            {!isCollapsed && (
-              <span className="truncate">{item.title}</span>
+            {({ isActive }) => (
+              <>
+                <item.icon
+                  className={cn(
+                    "w-5 h-5 transition-colors duration-200",
+                    isActive ? "text-primary" : item.color
+                  )}
+                />
+                {!isCollapsed && (
+                  <span className="truncate">{item.title}</span>
+                )}
+              </>
             )}
           </NavLink>
         ))}
