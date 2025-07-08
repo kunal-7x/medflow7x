@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useHospitalData } from "@/contexts/HospitalDataContext";
 import {
   Activity,
   Bed,
@@ -17,31 +18,34 @@ import {
 } from "lucide-react";
 
 export function Dashboard() {
+  const { getAnalytics, beds, alerts: alertsData, markAllAlertsAsRead } = useHospitalData();
+  const analytics = getAnalytics();
+
   const stats = [
     {
       title: "Total Patients",
-      value: "247",
+      value: analytics.totalPatients.toString(),
       change: "+12%",
       icon: User,
       color: "text-blue-600"
     },
     {
       title: "Bed Occupancy",
-      value: "89%",
+      value: `${Math.round(analytics.occupancyRate)}%`,
       change: "+5%",
       icon: Bed,
       color: "text-green-600"
     },
     {
       title: "Today's Appointments",
-      value: "42",
+      value: analytics.todayAppointments.toString(),
       change: "+8%",
       icon: Calendar,
       color: "text-purple-600"
     },
     {
       title: "Active Staff",
-      value: "156",
+      value: analytics.activeStaff.toString(),
       change: "+2%",
       icon: Users,
       color: "text-orange-600"

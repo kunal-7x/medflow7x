@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HospitalDataProvider } from "@/contexts/HospitalDataContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { Dashboard } from "./components/Dashboard";
@@ -33,28 +34,30 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout><Dashboard /></Layout>} />
-          <Route path="/patients" element={<Layout><PatientManagement /></Layout>} />
-          <Route path="/beds" element={<Layout><BedManagement /></Layout>} />
-          <Route path="/appointments" element={<Layout><Appointments /></Layout>} />
-          <Route path="/admissions" element={<Layout><Admissions /></Layout>} />
-          <Route path="/orders" element={<Layout><Orders /></Layout>} />
-          <Route path="/nursing" element={<Layout><NursingStation /></Layout>} />
-          <Route path="/medications" element={<Layout><Medications /></Layout>} />
-          <Route path="/billing" element={<Layout><Billing /></Layout>} />
-          <Route path="/staff" element={<Layout><StaffScheduling /></Layout>} />
-          <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
-          <Route path="/compliance" element={<Layout><Compliance /></Layout>} />
-          <Route path="/notifications" element={<Layout><Notifications /></Layout>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <HospitalDataProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/patients" element={<Layout><PatientManagement /></Layout>} />
+            <Route path="/beds" element={<Layout><BedManagement /></Layout>} />
+            <Route path="/appointments" element={<Layout><Appointments /></Layout>} />
+            <Route path="/admissions" element={<Layout><Admissions /></Layout>} />
+            <Route path="/orders" element={<Layout><Orders /></Layout>} />
+            <Route path="/nursing" element={<Layout><NursingStation /></Layout>} />
+            <Route path="/medications" element={<Layout><Medications /></Layout>} />
+            <Route path="/billing" element={<Layout><Billing /></Layout>} />
+            <Route path="/staff" element={<Layout><StaffScheduling /></Layout>} />
+            <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
+            <Route path="/compliance" element={<Layout><Compliance /></Layout>} />
+            <Route path="/notifications" element={<Layout><Notifications /></Layout>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </HospitalDataProvider>
   </QueryClientProvider>
 );
 
