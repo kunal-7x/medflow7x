@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useHospitalData } from "@/contexts/HospitalDataContext";
+import { AlertsModal } from "@/components/modals/AlertsModal";
 import {
   Activity,
   Bed,
@@ -20,6 +22,7 @@ import {
 export function Dashboard() {
   const { getAnalytics, beds, alerts: alertsData, markAllAlertsAsRead } = useHospitalData();
   const analytics = getAnalytics();
+  const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
 
   const stats = [
     {
@@ -91,9 +94,13 @@ export function Dashboard() {
             <Clock className="w-4 h-4 mr-2" />
             Last updated: Just now
           </Button>
-          <Button variant="default" size="sm">
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={() => setIsAlertsModalOpen(true)}
+          >
             <Bell className="w-4 h-4 mr-2" />
-            View All Alerts
+            View All Alerts ({alertsData.filter(a => !a.isRead).length})
           </Button>
         </div>
       </div>
@@ -240,6 +247,11 @@ export function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertsModal 
+        isOpen={isAlertsModalOpen}
+        onClose={() => setIsAlertsModalOpen(false)}
+      />
     </div>
   );
 }

@@ -1,7 +1,13 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { VitalsModal } from "@/components/modals/VitalsModal";
+import { VitalsChartModal } from "@/components/modals/VitalsChartModal";
+import { useHospitalData, Patient } from "@/contexts/HospitalDataContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   User,
   Calendar,
@@ -11,38 +17,24 @@ import {
   FileText,
   Phone,
   Mail,
-  AlertTriangle
+  AlertTriangle,
+  MoreHorizontal,
+  TrendingUp,
+  UserMinus,
+  Edit,
+  Trash2
 } from "lucide-react";
 
 interface PatientCardProps {
-  patient: {
-    id: string;
-    name: string;
-    age: number;
-    gender: string;
-    condition: 'Critical' | 'Stable' | 'Good' | 'Fair';
-    bedNumber: string;
-    admissionDate: string;
-    doctor: string;
-    diagnosis: string;
-    allergies?: string[];
-    vitals: {
-      heartRate: number;
-      bloodPressure: string;
-      temperature: number;
-      oxygenSat: number;
-    };
-    lastUpdated: string;
-    avatar?: string;
-    contactInfo: {
-      phone: string;
-      email: string;
-      emergencyContact: string;
-    };
-  };
+  patient: Patient;
 }
 
 export function PatientCard({ patient }: PatientCardProps) {
+  const { dischargePatient, deletePatient } = useHospitalData();
+  const { toast } = useToast();
+  const [isVitalsModalOpen, setIsVitalsModalOpen] = useState(false);
+  const [isVitalsChartOpen, setIsVitalsChartOpen] = useState(false);
+
   const getConditionColor = (condition: string) => {
     switch (condition) {
       case 'Critical':
@@ -59,7 +51,6 @@ export function PatientCard({ patient }: PatientCardProps) {
   };
 
   const getVitalStatus = (vital: string, value: number) => {
-    // Simple logic for demonstration
     if (vital === 'heartRate') {
       return value > 100 || value < 60 ? 'text-warning' : 'text-success';
     }
@@ -72,13 +63,28 @@ export function PatientCard({ patient }: PatientCardProps) {
     return 'text-foreground';
   };
 
+  const handleDischarge = () => {
+    dischargePatient(patient.id);
+    toast({
+      title: "Patient discharged",
+      description: `${patient.name} has been successfully discharged`
+    });
+  };
+
+  const handleDelete = () => {
+    deletePatient(patient.id);
+    toast({
+      title: "Patient record deleted",
+      description: `${patient.name}'s record has been removed`
+    });
+  };
+
   return (
     <Card className="hover:shadow-medical transition-all duration-200">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="w-12 h-12">
-              <AvatarImage src={patient.avatar} alt={patient.name} />
               <AvatarFallback>{patient.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
             </Avatar>
             <div>
@@ -92,10 +98,47 @@ export function PatientCard({ patient }: PatientCardProps) {
               </CardDescription>
             </div>
           </div>
-          <Badge variant="outline" className={getConditionColor(patient.condition)}>
-            {patient.condition === 'Critical' && <AlertTriangle className="w-3 h-3 mr-1" />}
-            {patient.condition}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={getConditionColor(patient.condition)}>
+              {patient.condition === 'Critical' && <AlertTriangle className="w-3 h-3 mr-1" />}
+              {patient.condition}
+            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Patient Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setIsVitalsModalOpen(true)}>
+                  <Activity className="w-4 h-4 mr-2" />
+                  Update Vitals
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsVitalsChartOpen(true)}>
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  View Vitals Chart
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Patient
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDischarge}>
+                  <UserMinus className="w-4 h-4 mr-2" />
+                  Discharge
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleDelete}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Record
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </CardHeader>
 
@@ -187,16 +230,38 @@ export function PatientCard({ patient }: PatientCardProps) {
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" size="sm" className="flex-1">
-            <FileText className="w-4 h-4 mr-1" />
-            Chart
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="flex-1"
+            onClick={() => setIsVitalsChartOpen(true)}
+          >
+            <TrendingUp className="w-4 h-4 mr-1" />
+            Vitals Chart
           </Button>
-          <Button variant="medical" size="sm" className="flex-1">
+          <Button 
+            size="sm" 
+            variant="medical" 
+            className="flex-1"
+            onClick={() => setIsVitalsModalOpen(true)}
+          >
             <Activity className="w-4 h-4 mr-1" />
-            Vitals
+            Update Vitals
           </Button>
         </div>
       </CardContent>
+
+      <VitalsModal 
+        isOpen={isVitalsModalOpen}
+        onClose={() => setIsVitalsModalOpen(false)}
+        patient={patient}
+      />
+
+      <VitalsChartModal 
+        isOpen={isVitalsChartOpen}
+        onClose={() => setIsVitalsChartOpen(false)}
+        patient={patient}
+      />
     </Card>
   );
 }

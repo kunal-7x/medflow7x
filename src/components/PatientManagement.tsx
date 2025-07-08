@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { useHospitalData } from "@/contexts/HospitalDataContext";
+import { PatientFormModal } from "@/components/modals/PatientFormModal";
+import { QuickActionsModal } from "@/components/modals/QuickActionsModal";
+import { useToast } from "@/hooks/use-toast";
 import {
   Search,
   Filter,
@@ -16,106 +20,14 @@ import {
 } from "lucide-react";
 
 export function PatientManagement() {
+  const { patients } = useHospitalData();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCondition, setFilterCondition] = useState("all");
   const [filterWard, setFilterWard] = useState("all");
-
-  const patients = [
-    {
-      id: "P001",
-      name: "John Doe",
-      age: 45,
-      gender: "Male",
-      condition: "Critical" as const,
-      bedNumber: "ICU-01",
-      admissionDate: "2024-01-15",
-      doctor: "Dr. Sarah Johnson",
-      diagnosis: "Acute Myocardial Infarction",
-      allergies: ["Penicillin", "Latex"],
-      vitals: {
-        heartRate: 120,
-        bloodPressure: "140/90",
-        temperature: 37.2,
-        oxygenSat: 92
-      },
-      lastUpdated: "2 hours ago",
-      contactInfo: {
-        phone: "+1 (555) 123-4567",
-        email: "john.doe@email.com",
-        emergencyContact: "Jane Doe - Wife"
-      }
-    },
-    {
-      id: "P002",
-      name: "Jane Smith",
-      age: 32,
-      gender: "Female",
-      condition: "Stable" as const,
-      bedNumber: "GA-101",
-      admissionDate: "2024-01-14",
-      doctor: "Dr. Michael Chen",
-      diagnosis: "Appendectomy Post-Op",
-      allergies: ["Codeine"],
-      vitals: {
-        heartRate: 75,
-        bloodPressure: "120/80",
-        temperature: 36.8,
-        oxygenSat: 98
-      },
-      lastUpdated: "30 minutes ago",
-      contactInfo: {
-        phone: "+1 (555) 987-6543",
-        email: "jane.smith@email.com",
-        emergencyContact: "Bob Smith - Husband"
-      }
-    },
-    {
-      id: "P003",
-      name: "Robert Johnson",
-      age: 67,
-      gender: "Male",
-      condition: "Fair" as const,
-      bedNumber: "GA-205",
-      admissionDate: "2024-01-13",
-      doctor: "Dr. Emily Davis",
-      diagnosis: "Pneumonia",
-      vitals: {
-        heartRate: 88,
-        bloodPressure: "130/85",
-        temperature: 37.8,
-        oxygenSat: 94
-      },
-      lastUpdated: "1 hour ago",
-      contactInfo: {
-        phone: "+1 (555) 456-7890",
-        email: "robert.j@email.com",
-        emergencyContact: "Mary Johnson - Daughter"
-      }
-    },
-    {
-      id: "P004",
-      name: "Maria Garcia",
-      age: 28,
-      gender: "Female",
-      condition: "Good" as const,
-      bedNumber: "MAT-15",
-      admissionDate: "2024-01-16",
-      doctor: "Dr. Lisa Wong",
-      diagnosis: "Normal Delivery",
-      vitals: {
-        heartRate: 72,
-        bloodPressure: "115/75",
-        temperature: 36.5,
-        oxygenSat: 99
-      },
-      lastUpdated: "15 minutes ago",
-      contactInfo: {
-        phone: "+1 (555) 234-5678",
-        email: "maria.garcia@email.com",
-        emergencyContact: "Carlos Garcia - Husband"
-      }
-    }
-  ];
+  const [isAdmitModalOpen, setIsAdmitModalOpen] = useState(false);
+  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<'admit' | 'surgery' | 'report' | 'round' | null>(null);
 
   const filteredPatients = patients.filter(patient => {
     const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -135,6 +47,30 @@ export function PatientManagement() {
     good: patients.filter(p => p.condition === 'Good').length
   };
 
+  const handleExportReport = () => {
+    const csvContent = patients.map(p => 
+      `${p.name},${p.id},${p.condition},${p.diagnosis},${p.doctor},${p.bedNumber}`
+    ).join('\n');
+    
+    const blob = new Blob([`Name,ID,Condition,Diagnosis,Doctor,Bed\n${csvContent}`], 
+      { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `patients_report_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    
+    toast({
+      title: "Report exported",
+      description: "Patient report has been downloaded as CSV"
+    });
+  };
+
+  const handleQuickAction = (action: 'admit' | 'surgery' | 'report' | 'round') => {
+    setSelectedAction(action);
+    setIsQuickActionsOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -148,11 +84,19 @@ export function PatientManagement() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleExportReport}
+          >
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
-          <Button variant="medical" size="sm">
+          <Button 
+            variant="medical" 
+            size="sm"
+            onClick={() => setIsAdmitModalOpen(true)}
+          >
             <UserPlus className="w-4 h-4 mr-2" />
             Admit Patient
           </Button>
@@ -274,25 +218,53 @@ export function PatientManagement() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-auto flex-col gap-2 p-4">
+            <Button 
+              variant="outline" 
+              className="h-auto flex-col gap-2 p-4"
+              onClick={() => handleQuickAction('admit')}
+            >
               <UserPlus className="w-6 h-6" />
               <span>Admit New Patient</span>
             </Button>
-            <Button variant="outline" className="h-auto flex-col gap-2 p-4">
+            <Button 
+              variant="outline" 
+              className="h-auto flex-col gap-2 p-4"
+              onClick={() => handleQuickAction('surgery')}
+            >
               <Calendar className="w-6 h-6" />
               <span>Schedule Surgery</span>
             </Button>
-            <Button variant="outline" className="h-auto flex-col gap-2 p-4">
+            <Button 
+              variant="outline" 
+              className="h-auto flex-col gap-2 p-4"
+              onClick={() => handleQuickAction('report')}
+            >
               <Download className="w-6 h-6" />
               <span>Generate Reports</span>
             </Button>
-            <Button variant="outline" className="h-auto flex-col gap-2 p-4">
+            <Button 
+              variant="outline" 
+              className="h-auto flex-col gap-2 p-4"
+              onClick={() => handleQuickAction('round')}
+            >
               <Users className="w-6 h-6" />
               <span>Ward Round</span>
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      <PatientFormModal 
+        isOpen={isAdmitModalOpen}
+        onClose={() => setIsAdmitModalOpen(false)}
+        mode="create"
+      />
+
+      <QuickActionsModal 
+        isOpen={isQuickActionsOpen}
+        onClose={() => setIsQuickActionsOpen(false)}
+        action={selectedAction}
+      />
     </div>
   );
 }
