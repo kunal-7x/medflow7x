@@ -4,44 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, User, Phone, Plus, Search, Filter } from "lucide-react";
-
-const mockAppointments = [
-  {
-    id: 1,
-    patient: "John Smith",
-    doctor: "Dr. Wilson",
-    time: "09:00",
-    date: "2024-01-15",
-    type: "Consultation",
-    status: "confirmed",
-    phone: "+1-555-0123"
-  },
-  {
-    id: 2,
-    patient: "Sarah Johnson",
-    doctor: "Dr. Brown",
-    time: "10:30",
-    date: "2024-01-15",
-    type: "Follow-up",
-    status: "pending",
-    phone: "+1-555-0124"
-  },
-  {
-    id: 3,
-    patient: "Mike Davis",
-    doctor: "Dr. Miller",
-    time: "14:00",
-    date: "2024-01-15",
-    type: "Surgery",
-    status: "confirmed",
-    phone: "+1-555-0125"
-  }
-];
+import { useHospitalData } from "@/contexts/HospitalDataContext";
+import { AppointmentFormModal } from "@/components/modals/AppointmentFormModal";
+import { ContactModal } from "@/components/modals/ContactModal";
+import { RescheduleModal } from "@/components/modals/RescheduleModal";
 
 export function Appointments() {
-  const [appointments, setAppointments] = useState(mockAppointments);
+  const { appointments, getAnalytics } = useHospitalData();
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  
+  const analytics = getAnalytics();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -52,10 +31,12 @@ export function Appointments() {
     }
   };
 
-  const filteredAppointments = appointments.filter(apt =>
-    apt.patient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    apt.doctor.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAppointments = appointments.filter(apt => {
+    const matchesSearch = apt.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         apt.doctor.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === "all" || apt.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-6">
@@ -65,7 +46,11 @@ export function Appointments() {
           <h1 className="text-3xl font-bold text-foreground">Appointments & Scheduling</h1>
           <p className="text-muted-foreground">Manage patient appointments and schedules</p>
         </div>
-        <Button className="gap-2" variant="default">
+        <Button 
+          className="gap-2" 
+          variant="default"
+          onClick={() => setIsAppointmentModalOpen(true)}
+        >
           <Plus className="w-4 h-4" />
           New Appointment
         </Button>
@@ -78,7 +63,7 @@ export function Appointments() {
             <div className="flex items-center gap-3">
               <Calendar className="w-8 h-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold">24</p>
+                <p className="text-2xl font-bold">{analytics.todayAppointments}</p>
                 <p className="text-sm text-muted-foreground">Today's Appointments</p>
               </div>
             </div>
@@ -137,10 +122,19 @@ export function Appointments() {
               className="pl-10"
             />
           </div>
-          <Button variant="outline" className="gap-2">
-            <Filter className="w-4 h-4" />
-            Filter
-          </Button>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-32">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <TabsContent value="today" className="space-y-4">
@@ -158,7 +152,7 @@ export function Appointments() {
                         <p className="text-sm text-muted-foreground">{appointment.date}</p>
                       </div>
                       <div>
-                        <p className="font-medium">{appointment.patient}</p>
+                        <p className="font-medium">{appointment.patientName}</p>
                         <p className="text-sm text-muted-foreground">{appointment.doctor}</p>
                         <p className="text-xs text-muted-foreground">{appointment.phone}</p>
                       </div>
@@ -169,8 +163,26 @@ export function Appointments() {
                       </Badge>
                       <Badge variant="outline">{appointment.type}</Badge>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">Reschedule</Button>
-                        <Button size="sm" variant="outline">Contact</Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedAppointment(appointment);
+                            setIsRescheduleModalOpen(true);
+                          }}
+                        >
+                          Reschedule
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedAppointment(appointment);
+                            setIsContactModalOpen(true);
+                          }}
+                        >
+                          Contact
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -222,6 +234,39 @@ export function Appointments() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AppointmentFormModal
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setIsAppointmentModalOpen(false)}
+        mode="create"
+      />
+
+      {selectedAppointment && (
+        <>
+          <ContactModal
+            isOpen={isContactModalOpen}
+            onClose={() => {
+              setIsContactModalOpen(false);
+              setSelectedAppointment(null);
+            }}
+            patientName={selectedAppointment.patientName}
+            patientPhone={selectedAppointment.phone}
+          />
+
+          <RescheduleModal
+            isOpen={isRescheduleModalOpen}
+            onClose={() => {
+              setIsRescheduleModalOpen(false);
+              setSelectedAppointment(null);
+            }}
+            appointmentId={selectedAppointment.id}
+            currentDate={selectedAppointment.date}
+            currentTime={selectedAppointment.time}
+            patientName={selectedAppointment.patientName}
+            doctor={selectedAppointment.doctor}
+          />
+        </>
+      )}
     </div>
   );
 }

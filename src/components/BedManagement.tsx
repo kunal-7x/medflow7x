@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Bed,
   Search,
@@ -20,6 +18,9 @@ import {
   Settings,
   MapPin
 } from "lucide-react";
+import { useHospitalData } from "@/contexts/HospitalDataContext";
+import { BedAssignmentModal } from "@/components/modals/BedAssignmentModal";
+import { useToast } from "@/hooks/use-toast";
 
 interface BedData {
   id: string;
@@ -38,79 +39,31 @@ interface BedData {
 }
 
 export function BedManagement() {
+  const { beds, patients, assignBed, updateBedStatus, releaseBed, dischargePatient } = useHospitalData();
+  const { toast } = useToast();
   const [selectedWard, setSelectedWard] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [selectedBed, setSelectedBed] = useState<BedData | null>(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedBed, setSelectedBed] = useState<any>(null);
+  const [isFloorPlanView, setIsFloorPlanView] = useState(false);
 
-  const beds: BedData[] = [
-    {
-      id: "1",
-      number: "ICU-01",
-      ward: "ICU",
-      floor: 3,
-      status: "occupied",
-      patient: {
-        name: "John Doe",
-        id: "P001",
-        admissionDate: "2024-01-15",
-        condition: "Critical"
-      },
-      lastCleaned: "2024-01-15 08:00"
-    },
-    {
-      id: "2",
-      number: "ICU-02",
-      ward: "ICU",
-      floor: 3,
-      status: "available",
-      lastCleaned: "2024-01-15 10:30"
-    },
-    {
-      id: "3",
-      number: "GA-101",
-      ward: "General Ward A",
-      floor: 2,
-      status: "occupied",
-      patient: {
-        name: "Jane Smith",
-        id: "P002",
-        admissionDate: "2024-01-14",
-        condition: "Stable"
-      },
-      lastCleaned: "2024-01-14 09:00"
-    },
-    {
-      id: "4",
-      number: "GA-102",
-      ward: "General Ward A",
-      floor: 2,
-      status: "maintenance",
-      notes: "Air conditioning repair needed",
-      lastCleaned: "2024-01-13 14:00"
-    },
-    {
-      id: "5",
-      number: "GA-103",
-      ward: "General Ward A",
-      floor: 2,
-      status: "cleaning",
-      lastCleaned: "In progress"
-    },
-    {
-      id: "6",
-      number: "ER-01",
-      ward: "Emergency",
-      floor: 1,
-      status: "reserved",
-      notes: "Reserved for incoming ambulance",
-      lastCleaned: "2024-01-15 12:00"
-    }
-  ];
+  // Get patients for each bed
+  const bedsWithPatients = beds.map(bed => {
+    const patient = bed.patientId ? patients.find(p => p.id === bed.patientId) : null;
+    return {
+      ...bed,
+      patient: patient ? {
+        name: patient.name,
+        id: patient.id,
+        admissionDate: patient.admissionDate,
+        condition: patient.condition
+      } : null
+    };
+  });
 
   const wards = ["all", "ICU", "General Ward A", "General Ward B", "Emergency", "Pediatrics"];
 
-  const filteredBeds = beds.filter(bed => {
+  const filteredBeds = bedsWithPatients.filter(bed => {
     const matchesWard = selectedWard === "all" || bed.ward === selectedWard;
     const matchesSearch = bed.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          bed.patient?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -157,8 +110,46 @@ export function BedManagement() {
     available: beds.filter(b => b.status === 'available').length,
     occupied: beds.filter(b => b.status === 'occupied').length,
     maintenance: beds.filter(b => b.status === 'maintenance').length,
-    cleaning: beds.filter(b => b.status === 'cleaning').length,
-    reserved: beds.filter(b => b.status === 'reserved').length
+    cleaning: beds.filter(b => b.status === 'cleaning').length
+  };
+
+  const handleBedAction = (action: string, bed: any) => {
+    switch (action) {
+      case 'assign':
+        setSelectedBed(bed);
+        setIsAssignModalOpen(true);
+        break;
+      case 'discharge':
+        if (bed.patientId) {
+          dischargePatient(bed.patientId);
+          toast({
+            title: "Success",
+            description: "Patient discharged successfully"
+          });
+        }
+        break;
+      case 'maintenance':
+        updateBedStatus(bed.id, 'maintenance');
+        toast({
+          title: "Success",
+          description: "Bed marked for maintenance"
+        });
+        break;
+      case 'cleaning':
+        updateBedStatus(bed.id, 'cleaning');
+        toast({
+          title: "Success",
+          description: "Bed marked for cleaning"
+        });
+        break;
+      case 'available':
+        updateBedStatus(bed.id, 'available');
+        toast({
+          title: "Success",
+          description: "Bed marked as available"
+        });
+        break;
+    }
   };
 
   return (
@@ -174,71 +165,35 @@ export function BedManagement() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsFloorPlanView(!isFloorPlanView)}
+          >
             <MapPin className="w-4 h-4 mr-2" />
-            Floor Plan View
+            {isFloorPlanView ? 'List View' : 'Floor Plan View'}
           </Button>
-          <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="medical" size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Assign Patient
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Assign Patient to Bed</DialogTitle>
-                <DialogDescription>
-                  Select an available bed and assign a patient
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="patient-id" className="text-right">
-                    Patient ID
-                  </Label>
-                  <Input id="patient-id" placeholder="P001" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="bed-select" className="text-right">
-                    Bed
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select available bed" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {beds
-                        .filter(bed => bed.status === 'available')
-                        .map(bed => (
-                          <SelectItem key={bed.id} value={bed.id}>
-                            {bed.number} - {bed.ward}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="notes" className="text-right">
-                    Notes
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Any special requirements or notes..."
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button variant="medical" onClick={() => setIsAssignDialogOpen(false)}>
-                  Assign Patient
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            variant="medical" 
+            size="sm"
+            onClick={() => {
+              // Find first available bed and open assignment modal
+              const availableBed = beds.find(bed => bed.status === 'available');
+              if (availableBed) {
+                setSelectedBed(availableBed);
+                setIsAssignModalOpen(true);
+              } else {
+                toast({
+                  title: "No Available Beds",
+                  description: "All beds are currently occupied or unavailable",
+                  variant: "destructive"
+                });
+              }
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Assign Patient
+          </Button>
         </div>
       </div>
 
@@ -271,8 +226,8 @@ export function BedManagement() {
         <Card className="hover:shadow-medical transition-all duration-200">
           <CardContent className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-status-reserved">{statusCounts.reserved}</div>
-              <div className="text-sm text-muted-foreground">Reserved</div>
+              <div className="text-2xl font-bold text-status-maintenance">{statusCounts.maintenance}</div>
+              <div className="text-sm text-muted-foreground">Maintenance</div>
             </div>
           </CardContent>
         </Card>
@@ -287,8 +242,8 @@ export function BedManagement() {
         <Card className="hover:shadow-medical transition-all duration-200">
           <CardContent className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-status-maintenance">{statusCounts.maintenance}</div>
-              <div className="text-sm text-muted-foreground">Maintenance</div>
+              <div className="text-2xl font-bold text-status-cleaning">{statusCounts.cleaning}</div>
+              <div className="text-sm text-muted-foreground">Cleaning</div>
             </div>
           </CardContent>
         </Card>
@@ -324,84 +279,161 @@ export function BedManagement() {
         </CardContent>
       </Card>
 
-      {/* Bed Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredBeds.map((bed) => (
-          <Card key={bed.id} className="hover:shadow-medical transition-all duration-200 cursor-pointer">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold">{bed.number}</CardTitle>
-                <Badge variant="outline" className={getStatusColor(bed.status)}>
-                  {getStatusIcon(bed.status)}
-                  <span className="ml-1 capitalize">{bed.status}</span>
-                </Badge>
+      {/* Bed Grid or Floor Plan */}
+      {isFloorPlanView ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Floor Plan View</CardTitle>
+            <CardDescription>Interactive floor plan showing bed locations and status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Floor 2 - ICU */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">Floor 2 - ICU</h3>
+                <div className="grid grid-cols-4 gap-2 p-4 border rounded-lg">
+                  {filteredBeds.filter(bed => bed.ward === 'ICU').map((bed) => (
+                    <div
+                      key={bed.id}
+                      className={`p-2 rounded text-center text-xs cursor-pointer transition-colors ${
+                        bed.status === 'available' ? 'bg-status-available/20 hover:bg-status-available/30' :
+                        bed.status === 'occupied' ? 'bg-status-occupied/20 hover:bg-status-occupied/30' :
+                        bed.status === 'maintenance' ? 'bg-status-maintenance/20 hover:bg-status-maintenance/30' :
+                        'bg-status-cleaning/20 hover:bg-status-cleaning/30'
+                      }`}
+                      onClick={() => {
+                        setSelectedBed(bed);
+                        if (bed.status === 'available') {
+                          setIsAssignModalOpen(true);
+                        }
+                      }}
+                    >
+                      <div className="font-medium">{bed.number}</div>
+                      <div className="text-xs">{bed.patient?.name || bed.status}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <CardDescription className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                {bed.ward} - Floor {bed.floor}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {bed.patient ? (
-                <div className="space-y-2">
-                  <div className="font-medium text-sm">Patient: {bed.patient.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    ID: {bed.patient.id} • Admitted: {bed.patient.admissionDate}
-                  </div>
-                  <Badge variant="outline" className={
-                    bed.patient.condition === 'Critical' ? 'bg-destructive/10 text-destructive' :
-                    bed.patient.condition === 'Stable' ? 'bg-success/10 text-success' :
-                    'bg-warning/10 text-warning'
-                  }>
-                    {bed.patient.condition}
+              
+              {/* Floor 1 - General */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">Floor 1 - General</h3>
+                <div className="grid grid-cols-4 gap-2 p-4 border rounded-lg">
+                  {filteredBeds.filter(bed => bed.ward !== 'ICU').map((bed) => (
+                    <div
+                      key={bed.id}
+                      className={`p-2 rounded text-center text-xs cursor-pointer transition-colors ${
+                        bed.status === 'available' ? 'bg-status-available/20 hover:bg-status-available/30' :
+                        bed.status === 'occupied' ? 'bg-status-occupied/20 hover:bg-status-occupied/30' :
+                        bed.status === 'maintenance' ? 'bg-status-maintenance/20 hover:bg-status-maintenance/30' :
+                        'bg-status-cleaning/20 hover:bg-status-cleaning/30'
+                      }`}
+                      onClick={() => {
+                        setSelectedBed(bed);
+                        if (bed.status === 'available') {
+                          setIsAssignModalOpen(true);
+                        }
+                      }}
+                    >
+                      <div className="font-medium">{bed.number}</div>
+                      <div className="text-xs">{bed.patient?.name || bed.status}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredBeds.map((bed) => (
+            <Card key={bed.id} className="hover:shadow-medical transition-all duration-200 cursor-pointer">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold">{bed.number}</CardTitle>
+                  <Badge variant="outline" className={getStatusColor(bed.status)}>
+                    {getStatusIcon(bed.status)}
+                    <span className="ml-1 capitalize">{bed.status}</span>
                   </Badge>
                 </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">
-                  {bed.status === 'available' ? 'Ready for patient assignment' :
-                   bed.status === 'maintenance' ? 'Under maintenance' :
-                   bed.status === 'cleaning' ? 'Being cleaned' :
-                   bed.status === 'reserved' ? 'Reserved' : 'Status unknown'}
-                </div>
-              )}
-              
-              {bed.notes && (
-                <div className="text-xs p-2 bg-muted/50 rounded border-l-2 border-primary/30">
-                  {bed.notes}
-                </div>
-              )}
-              
-              <div className="text-xs text-muted-foreground">
-                Last cleaned: {bed.lastCleaned}
-              </div>
-              
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-                {bed.status === 'available' && (
-                  <Button 
-                    variant="medical" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => {
-                      setSelectedBed(bed);
-                      setIsAssignDialogOpen(true);
-                    }}
-                  >
-                    Assign
-                  </Button>
+                <CardDescription className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {bed.ward} - Floor {bed.floor}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {bed.patient ? (
+                  <div className="space-y-2">
+                    <div className="font-medium text-sm">Patient: {bed.patient.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      ID: {bed.patient.id} • Admitted: {bed.patient.admissionDate}
+                    </div>
+                    <Badge variant="outline" className={
+                      bed.patient.condition === 'Critical' ? 'bg-destructive/10 text-destructive' :
+                      bed.patient.condition === 'Stable' ? 'bg-success/10 text-success' :
+                      'bg-warning/10 text-warning'
+                    }>
+                      {bed.patient.condition}
+                    </Badge>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    {bed.status === 'available' ? 'Ready for patient assignment' :
+                     bed.status === 'maintenance' ? 'Under maintenance' :
+                     bed.status === 'cleaning' ? 'Being cleaned' : 'Status unknown'}
+                  </div>
                 )}
-                {bed.status === 'occupied' && (
-                  <Button variant="outline" size="sm" className="flex-1">
-                    Discharge
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                
+                <div className="text-xs text-muted-foreground">
+                  Last cleaned: 2 hours ago
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleBedAction('maintenance', bed)}>
+                        Set Maintenance
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBedAction('cleaning', bed)}>
+                        Set Cleaning
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBedAction('available', bed)}>
+                        Mark Available
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  {bed.status === 'available' && (
+                    <Button 
+                      variant="medical" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleBedAction('assign', bed)}
+                    >
+                      Assign
+                    </Button>
+                  )}
+                  {bed.status === 'occupied' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleBedAction('discharge', bed)}
+                    >
+                      Discharge
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {filteredBeds.length === 0 && (
         <Card>
@@ -410,6 +442,17 @@ export function BedManagement() {
             <p className="text-muted-foreground">No beds found matching your criteria.</p>
           </CardContent>
         </Card>
+      )}
+
+      {selectedBed && (
+        <BedAssignmentModal
+          isOpen={isAssignModalOpen}
+          onClose={() => {
+            setIsAssignModalOpen(false);
+            setSelectedBed(null);
+          }}
+          bed={selectedBed}
+        />
       )}
     </div>
   );
