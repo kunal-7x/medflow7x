@@ -99,8 +99,8 @@ export function Orders() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Orders & Results</h1>
-          <p className="text-muted-foreground">Manage lab orders, imaging requests, and results</p>
+          <h1 className="text-2xl font-bold text-gradient-gold">Orders & Results</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage lab orders, imaging requests, and results</p>
         </div>
         <div className="flex gap-2">
           <Button className="gap-2" variant="default">

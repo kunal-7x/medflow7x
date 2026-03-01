@@ -132,8 +132,8 @@ export function Notifications() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Notifications</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold text-gradient-gold">Notifications</h1>
+          <p className="text-muted-foreground text-sm">
             Manage alerts and communication preferences
             {unreadCount > 0 && (
               <Badge variant="destructive" className="ml-2">

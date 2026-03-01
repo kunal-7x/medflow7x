@@ -94,8 +94,8 @@ export function StaffScheduling() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Staff Scheduling</h1>
-          <p className="text-muted-foreground">Manage staff schedules, shifts, and time-off requests</p>
+          <h1 className="text-2xl font-bold text-gradient-gold">Staff Scheduling</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage staff schedules, shifts, and time-off requests</p>
         </div>
         <div className="flex gap-2">
           <Button className="gap-2" variant="default">

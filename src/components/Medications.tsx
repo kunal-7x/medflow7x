@@ -81,8 +81,8 @@ export function Medications() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Medications & Pharmacy</h1>
-          <p className="text-muted-foreground">Manage prescriptions, inventory, and drug safety</p>
+          <h1 className="text-2xl font-bold text-gradient-gold">Medications & Pharmacy</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage prescriptions, inventory, and drug safety</p>
         </div>
         <div className="flex gap-2">
           <Button className="gap-2" variant="default">

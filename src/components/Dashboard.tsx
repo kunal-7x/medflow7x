@@ -16,7 +16,9 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle,
-  Bell
+  Bell,
+  ArrowUpRight,
+  Zap
 } from "lucide-react";
 
 export function Dashboard() {
@@ -25,34 +27,10 @@ export function Dashboard() {
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
 
   const stats = [
-    {
-      title: "Total Patients",
-      value: analytics.totalPatients.toString(),
-      change: "+12%",
-      icon: User,
-      color: "text-blue-600"
-    },
-    {
-      title: "Bed Occupancy",
-      value: `${Math.round(analytics.occupancyRate)}%`,
-      change: "+5%",
-      icon: Bed,
-      color: "text-green-600"
-    },
-    {
-      title: "Today's Appointments",
-      value: analytics.todayAppointments.toString(),
-      change: "+8%",
-      icon: Calendar,
-      color: "text-purple-600"
-    },
-    {
-      title: "Active Staff",
-      value: analytics.activeStaff.toString(),
-      change: "+2%",
-      icon: Users,
-      color: "text-orange-600"
-    }
+    { title: "Total Patients", value: analytics.totalPatients.toString(), change: "+12%", icon: User, accent: "from-[hsl(48,96%,53%)] to-[hsl(42,90%,45%)]" },
+    { title: "Bed Occupancy", value: `${Math.round(analytics.occupancyRate)}%`, change: "+5%", icon: Bed, accent: "from-[hsl(160,60%,45%)] to-[hsl(170,55%,40%)]" },
+    { title: "Appointments", value: analytics.todayAppointments.toString(), change: "+8%", icon: Calendar, accent: "from-[hsl(200,70%,55%)] to-[hsl(210,65%,50%)]" },
+    { title: "Active Staff", value: analytics.activeStaff.toString(), change: "+2%", icon: Users, accent: "from-[hsl(280,60%,55%)] to-[hsl(290,55%,50%)]" }
   ];
 
   const bedStatus = [
@@ -82,127 +60,122 @@ export function Dashboard() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold text-gradient-gold flex items-center gap-2">
+            <Zap className="w-6 h-6 text-primary" />
             Hospital Dashboard
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Real-time overview of hospital operations
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" size="sm">
-            <Clock className="w-4 h-4 mr-2" />
-            Last updated: Just now
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="text-xs">
+            <Clock className="w-3.5 h-3.5 mr-1.5" />
+            Just now
           </Button>
           <Button 
             variant="default" 
             size="sm"
             onClick={() => setIsAlertsModalOpen(true)}
+            className="text-xs"
           >
-            <Bell className="w-4 h-4 mr-2" />
-            View All Alerts ({alertsData.filter(a => !a.isRead).length})
+            <Bell className="w-3.5 h-3.5 mr-1.5" />
+            Alerts ({alertsData.filter(a => !a.isRead).length})
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-medical transition-all duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className={`w-5 h-5 ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">{stat.change}</span> from last month
-              </p>
+          <Card key={index} className="group relative overflow-hidden">
+            <div className={`absolute inset-0 bg-gradient-to-br ${stat.accent} opacity-[0.04] group-hover:opacity-[0.08] transition-opacity duration-500`} />
+            <CardContent className="p-5 relative">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.accent} flex items-center justify-center shadow-lg`}>
+                  <stat.icon className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex items-center gap-1 text-xs text-success">
+                  <ArrowUpRight className="w-3 h-3" />
+                  {stat.change}
+                </div>
+              </div>
+              <div className="text-2xl font-bold tracking-tight animate-count-up">{stat.value}</div>
+              <p className="text-xs text-muted-foreground mt-0.5">{stat.title}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Bed Status Overview */}
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bed className="w-5 h-5 text-green-600" />
-              Bed Management Overview
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bed className="w-4 h-4 text-primary" />
+              Bed Management
             </CardTitle>
-            <CardDescription>
-              Real-time bed availability across all wards
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {bedStatus.map((ward, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{ward.ward}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {ward.occupied}/{ward.total} occupied
-                  </span>
-                </div>
-                <div className="flex gap-2 text-xs">
-                  <Progress 
-                    value={(ward.occupied / ward.total) * 100} 
-                    className="flex-1"
-                  />
-                  <div className="flex gap-2">
-                    <Badge variant="outline" className="bg-status-occupied/10 text-status-occupied">
-                      {ward.occupied} Occupied
-                    </Badge>
-                    <Badge variant="outline" className="bg-status-available/10 text-status-available">
-                      {ward.available} Available
-                    </Badge>
-                    {ward.maintenance > 0 && (
-                      <Badge variant="outline" className="bg-status-maintenance/10 text-status-maintenance">
-                        {ward.maintenance} Maintenance
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            <Button variant="medical" className="w-full mt-4">
-              <Bed className="w-4 h-4 mr-2" />
-              View Detailed Bed Management
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Alerts & Notifications */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-warning" />
-              Active Alerts
-            </CardTitle>
-            <CardDescription>
-              Urgent notifications requiring attention
+            <CardDescription className="text-xs">
+              Real-time bed availability across wards
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            {bedStatus.map((ward, index) => (
+              <div key={index} className="space-y-1.5 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">{ward.ward}</span>
+                  <span className="text-xs text-muted-foreground font-mono">
+                    {ward.occupied}/{ward.total}
+                  </span>
+                </div>
+                <Progress 
+                  value={(ward.occupied / ward.total) * 100} 
+                  className="h-1.5"
+                />
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-status-occupied/10 text-status-occupied border-status-occupied/20">
+                    {ward.occupied} Occ
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-status-available/10 text-status-available border-status-available/20">
+                    {ward.available} Free
+                  </Badge>
+                  {ward.maintenance > 0 && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-status-maintenance/10 text-status-maintenance border-status-maintenance/20">
+                      {ward.maintenance} Maint
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Alerts */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="w-4 h-4 text-warning" />
+              Active Alerts
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
             {alerts.map((alert) => (
-              <div key={alert.id} className="p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-                <div className="flex items-start gap-3">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
+              <div key={alert.id} className="p-3 rounded-lg border border-border/30 hover:border-primary/20 transition-colors bg-secondary/20">
+                <div className="flex items-start gap-2.5">
+                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
                     alert.type === 'warning' ? 'bg-warning' : 'bg-primary'
                   }`} />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{alert.message}</p>
-                    <Badge variant="outline" className="mt-1 text-xs">
-                      {alert.priority} priority
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium leading-relaxed">{alert.message}</p>
+                    <Badge variant="outline" className="mt-1.5 text-[10px] px-1.5 py-0 h-4">
+                      {alert.priority}
                     </Badge>
                   </div>
                 </div>
               </div>
             ))}
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full text-xs mt-2" size="sm">
               View All Alerts
             </Button>
           </CardContent>
@@ -211,37 +184,34 @@ export function Dashboard() {
 
       {/* Recent Activity */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-primary" />
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Activity className="w-4 h-4 text-primary" />
             Recent Activity
           </CardTitle>
-          <CardDescription>
-            Latest hospital operations and patient updates
-          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-1">
             {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              <div key={activity.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-secondary/30 transition-colors group">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                   activity.type === 'admission' ? 'bg-primary/10 text-primary' :
                   activity.type === 'discharge' ? 'bg-success/10 text-success' :
                   activity.type === 'emergency' ? 'bg-destructive/10 text-destructive' :
-                  activity.type === 'lab' ? 'bg-accent/50 text-accent-foreground' :
+                  activity.type === 'lab' ? 'bg-accent/20 text-accent' :
                   'bg-muted text-muted-foreground'
                 }`}>
-                  {activity.type === 'admission' && <User className="w-4 h-4" />}
-                  {activity.type === 'discharge' && <CheckCircle className="w-4 h-4" />}
-                  {activity.type === 'emergency' && <Heart className="w-4 h-4" />}
-                  {activity.type === 'lab' && <Activity className="w-4 h-4" />}
-                  {activity.type === 'surgery' && <Calendar className="w-4 h-4" />}
+                  {activity.type === 'admission' && <User className="w-3.5 h-3.5" />}
+                  {activity.type === 'discharge' && <CheckCircle className="w-3.5 h-3.5" />}
+                  {activity.type === 'emergency' && <Heart className="w-3.5 h-3.5" />}
+                  {activity.type === 'lab' && <Activity className="w-3.5 h-3.5" />}
+                  {activity.type === 'surgery' && <Calendar className="w-3.5 h-3.5" />}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm">{activity.action}</p>
-                  <p className="text-sm text-muted-foreground">Patient: {activity.patient}</p>
+                  <p className="text-xs text-muted-foreground">{activity.patient}</p>
                 </div>
-                <span className="text-xs text-muted-foreground">{activity.time}</span>
+                <span className="text-[10px] text-muted-foreground font-mono">{activity.time}</span>
               </div>
             ))}
           </div>

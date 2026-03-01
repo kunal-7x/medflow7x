@@ -24,10 +24,12 @@ import { Sidebar } from "./components/Sidebar";
 const queryClient = new QueryClient();
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen bg-gradient-background flex w-full">
+  <div className="min-h-screen bg-background flex w-full">
     <Sidebar />
-    <main className="flex-1">
-      {children}
+    <main className="flex-1 min-w-0 overflow-auto p-6">
+      <div className="animate-fade-in">
+        {children}
+      </div>
     </main>
   </div>
 );
