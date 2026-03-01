@@ -20,23 +20,24 @@ import {
   Bell,
   LogOut,
   Menu,
-  X
+  X,
+  Zap
 } from "lucide-react";
 
 const navigationItems = [
-  { title: "Dashboard", url: "/", icon: Home, color: "text-primary" },
-  { title: "Patient Management", url: "/patients", icon: User, color: "text-blue-600" },
-  { title: "Bed Management", url: "/beds", icon: Bed, color: "text-green-600" },
-  { title: "Appointments", url: "/appointments", icon: Calendar, color: "text-purple-600" },
-  { title: "Admissions", url: "/admissions", icon: Clock, color: "text-orange-600" },
-  { title: "Orders & Results", url: "/orders", icon: FileText, color: "text-indigo-600" },
-  { title: "Nursing Station", url: "/nursing", icon: Heart, color: "text-red-600" },
-  { title: "Medications", url: "/medications", icon: Pill, color: "text-teal-600" },
-  { title: "Billing & Insurance", url: "/billing", icon: Wallet, color: "text-yellow-600" },
-  { title: "Staff Scheduling", url: "/staff", icon: Users, color: "text-pink-600" },
-  { title: "Analytics", url: "/analytics", icon: TrendingUp, color: "text-emerald-600" },
-  { title: "Compliance", url: "/compliance", icon: Shield, color: "text-gray-600" },
-  { title: "Notifications", url: "/notifications", icon: Bell, color: "text-amber-600" },
+  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Patients", url: "/patients", icon: User },
+  { title: "Beds", url: "/beds", icon: Bed },
+  { title: "Appointments", url: "/appointments", icon: Calendar },
+  { title: "Admissions", url: "/admissions", icon: Clock },
+  { title: "Orders", url: "/orders", icon: FileText },
+  { title: "Nursing", url: "/nursing", icon: Heart },
+  { title: "Medications", url: "/medications", icon: Pill },
+  { title: "Billing", url: "/billing", icon: Wallet },
+  { title: "Staff", url: "/staff", icon: Users },
+  { title: "Analytics", url: "/analytics", icon: TrendingUp },
+  { title: "Compliance", url: "/compliance", icon: Shield },
+  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 interface SidebarProps {
@@ -49,23 +50,23 @@ export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "bg-card border-r border-border shadow-card transition-all duration-300 ease-in-out flex flex-col",
-        isCollapsed ? "w-16" : "w-64"
+        "bg-sidebar border-r border-border/30 transition-all duration-300 ease-in-out flex flex-col",
+        isCollapsed ? "w-[68px]" : "w-60"
       )}
     >
       {/* Header */}
-      <div className="p-4 border-b border-border">
+      <div className="p-4 border-b border-border/30">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <Activity className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-glow">
+                <Zap className="w-4 h-4 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="font-bold text-lg bg-gradient-primary bg-clip-text text-transparent">
-                  MedFlow AI
+                <h1 className="font-bold text-base text-gradient-gold">
+                  MedFlow
                 </h1>
-                <p className="text-xs text-muted-foreground">{userRole}</p>
+                <p className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">{userRole}</p>
               </div>
             </div>
           )}
@@ -73,7 +74,7 @@ export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
             variant="ghost"
             size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hover:bg-accent"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
           >
             {isCollapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
           </Button>
@@ -81,28 +82,29 @@ export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         {navigationItems.map((item) => (
           <NavLink
             key={item.title}
             to={item.url}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
                 isActive
-                  ? "bg-primary/10 text-primary border border-primary/20 shadow-medical"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               )
             }
           >
             {({ isActive }) => (
               <>
-                <item.icon
-                  className={cn(
-                    "w-5 h-5 transition-colors duration-200",
-                    isActive ? "text-primary" : item.color
-                  )}
-                />
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r" />
+                )}
+                <item.icon className={cn(
+                  "w-[18px] h-[18px] transition-colors duration-200 flex-shrink-0",
+                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                )} />
                 {!isCollapsed && (
                   <span className="truncate">{item.title}</span>
                 )}
@@ -113,25 +115,22 @@ export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border space-y-2">
+      <div className="p-3 border-t border-border/30 space-y-0.5">
         <NavLink
           to="/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
         >
-          <Settings className="w-5 h-5" />
+          <Settings className="w-[18px] h-[18px] flex-shrink-0" />
           {!isCollapsed && <span>Settings</span>}
         </NavLink>
         
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-          onClick={() => {
-            // Handle logout
-            console.log("Logout clicked");
-          }}
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground h-9 px-3"
+          onClick={() => console.log("Logout clicked")}
         >
-          <LogOut className="w-5 h-5" />
-          {!isCollapsed && <span>Logout</span>}
+          <LogOut className="w-[18px] h-[18px] flex-shrink-0" />
+          {!isCollapsed && <span className="text-sm">Logout</span>}
         </Button>
       </div>
     </aside>

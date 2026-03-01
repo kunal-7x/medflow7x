@@ -61,8 +61,8 @@ export function NursingStation() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Nursing Station</h1>
-          <p className="text-muted-foreground">Patient care management and shift coordination</p>
+          <h1 className="text-2xl font-bold text-gradient-gold">Nursing Station</h1>
+          <p className="text-muted-foreground text-sm mt-1">Patient care management and shift coordination</p>
         </div>
         <div className="flex gap-2">
           <Button className="gap-2" variant="medical">

@@ -85,8 +85,8 @@ export function Billing() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Billing & Insurance</h1>
-          <p className="text-muted-foreground">Manage patient billing and insurance claims</p>
+          <h1 className="text-2xl font-bold text-gradient-gold">Billing & Insurance</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage patient billing and insurance claims</p>
         </div>
         <div className="flex gap-2">
           <Button className="gap-2" variant="default">

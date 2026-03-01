@@ -43,8 +43,8 @@ export function Appointments() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Appointments & Scheduling</h1>
-          <p className="text-muted-foreground">Manage patient appointments and schedules</p>
+          <h1 className="text-2xl font-bold text-gradient-gold">Appointments & Scheduling</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage patient appointments and schedules</p>
         </div>
         <Button 
           className="gap-2" 

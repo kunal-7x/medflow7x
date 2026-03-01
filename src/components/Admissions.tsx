@@ -2,47 +2,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserPlus, UserMinus, Clock, FileText, AlertCircle, CheckCircle } from "lucide-react";
 
 const mockAdmissions = [
-  {
-    id: 1,
-    patient: "Emily Brown",
-    room: "A-101",
-    admitDate: "2024-01-15",
-    admitTime: "08:30",
-    condition: "Pneumonia",
-    status: "active",
-    doctor: "Dr. Wilson",
-    insurance: "verified"
-  },
-  {
-    id: 2,
-    patient: "Robert Davis",
-    room: "B-205",
-    admitDate: "2024-01-14",
-    admitTime: "15:45",
-    condition: "Appendicitis",
-    status: "discharge-pending",
-    doctor: "Dr. Martinez",
-    insurance: "pending"
-  }
+  { id: 1, patient: "Emily Brown", room: "A-101", admitDate: "2024-01-15", admitTime: "08:30", condition: "Pneumonia", status: "active", doctor: "Dr. Wilson", insurance: "verified" },
+  { id: 2, patient: "Robert Davis", room: "B-205", admitDate: "2024-01-14", admitTime: "15:45", condition: "Appendicitis", status: "discharge-pending", doctor: "Dr. Martinez", insurance: "pending" }
 ];
 
 const mockDischarges = [
-  {
-    id: 1,
-    patient: "Lisa Johnson",
-    room: "C-301",
-    dischargeDate: "2024-01-15",
-    dischargeTime: "11:00",
-    condition: "Recovery Complete",
-    status: "completed",
-    doctor: "Dr. Smith",
-    followUp: "2024-01-22"
-  }
+  { id: 1, patient: "Lisa Johnson", room: "C-301", dischargeDate: "2024-01-15", dischargeTime: "11:00", condition: "Recovery Complete", status: "completed", doctor: "Dr. Smith", followUp: "2024-01-22" }
 ];
 
 export function Admissions() {
@@ -60,73 +29,41 @@ export function Admissions() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Admissions & Discharge</h1>
-          <p className="text-muted-foreground">Manage patient admissions and discharge processes</p>
+          <h1 className="text-2xl font-bold text-gradient-gold">Admissions & Discharge</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage patient admissions and discharge processes</p>
         </div>
         <div className="flex gap-2">
-          <Button className="gap-2" variant="default">
-            <UserPlus className="w-4 h-4" />
-            New Admission
-          </Button>
-          <Button className="gap-2" variant="medical">
-            <UserMinus className="w-4 h-4" />
-            Discharge Patient
-          </Button>
+          <Button className="gap-2 text-xs" variant="default" size="sm"><UserPlus className="w-3.5 h-3.5" /> New Admission</Button>
+          <Button className="gap-2 text-xs" variant="medical" size="sm"><UserMinus className="w-3.5 h-3.5" /> Discharge</Button>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <UserPlus className="w-8 h-8 text-primary" />
-              <div>
-                <p className="text-2xl font-bold">8</p>
-                <p className="text-sm text-muted-foreground">Today's Admissions</p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          { icon: UserPlus, value: "8", label: "Today's Admissions", color: "text-primary" },
+          { icon: UserMinus, value: "5", label: "Today's Discharges", color: "text-success" },
+          { icon: Clock, value: "12", label: "Pending Discharge", color: "text-warning" },
+          { icon: AlertCircle, value: "3", label: "Insurance Issues", color: "text-destructive" },
+        ].map((stat, i) => (
+          <Card key={i}>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center">
+                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold animate-count-up">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <UserMinus className="w-8 h-8 text-success" />
-              <div>
-                <p className="text-2xl font-bold">5</p>
-                <p className="text-sm text-muted-foreground">Today's Discharges</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Clock className="w-8 h-8 text-warning" />
-              <div>
-                <p className="text-2xl font-bold">12</p>
-                <p className="text-sm text-muted-foreground">Pending Discharge</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-8 h-8 text-destructive" />
-              <div>
-                <p className="text-2xl font-bold">3</p>
-                <p className="text-sm text-muted-foreground">Insurance Issues</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <Tabs defaultValue="admissions" className="space-y-6">
+      <Tabs defaultValue="admissions" className="space-y-4">
         <TabsList>
           <TabsTrigger value="admissions">Active Admissions</TabsTrigger>
           <TabsTrigger value="discharges">Recent Discharges</TabsTrigger>
@@ -135,40 +72,25 @@ export function Admissions() {
 
         <TabsContent value="admissions" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Current Admissions</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Current Admissions</CardTitle></CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {admissions.map((admission) => (
-                  <div key={admission.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+              <div className="space-y-3">
+                {admissions.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between p-3 rounded-lg border border-border/30 hover:border-primary/20 bg-secondary/10 hover:bg-secondary/20 transition-all">
                     <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <p className="font-semibold">{admission.room}</p>
-                        <p className="text-sm text-muted-foreground">Room</p>
-                      </div>
+                      <div className="text-center"><p className="font-semibold text-sm font-mono">{a.room}</p><p className="text-[10px] text-muted-foreground">Room</p></div>
                       <div>
-                        <p className="font-medium">{admission.patient}</p>
-                        <p className="text-sm text-muted-foreground">{admission.doctor}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Admitted: {admission.admitDate} at {admission.admitTime}
-                        </p>
+                        <p className="font-medium text-sm">{a.patient}</p>
+                        <p className="text-xs text-muted-foreground">{a.doctor}</p>
+                        <p className="text-[10px] text-muted-foreground">Admitted: {a.admitDate} at {a.admitTime}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant={getStatusColor(admission.status) as any}>
-                        {admission.status}
-                      </Badge>
-                      <Badge variant="outline">{admission.condition}</Badge>
-                      {admission.insurance === "verified" ? (
-                        <CheckCircle className="w-4 h-4 text-success" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4 text-warning" />
-                      )}
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">View Details</Button>
-                        <Button size="sm" variant="medical">Discharge</Button>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getStatusColor(a.status) as any}>{a.status}</Badge>
+                      <Badge variant="outline">{a.condition}</Badge>
+                      {a.insurance === "verified" ? <CheckCircle className="w-4 h-4 text-success" /> : <AlertCircle className="w-4 h-4 text-warning" />}
+                      <Button size="sm" variant="outline" className="text-xs h-7">Details</Button>
+                      <Button size="sm" variant="medical" className="text-xs h-7">Discharge</Button>
                     </div>
                   </div>
                 ))}
@@ -179,36 +101,23 @@ export function Admissions() {
 
         <TabsContent value="discharges" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Recent Discharges</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Recent Discharges</CardTitle></CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {discharges.map((discharge) => (
-                  <div key={discharge.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+              <div className="space-y-3">
+                {discharges.map((d) => (
+                  <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border border-border/30 bg-secondary/10 hover:bg-secondary/20 transition-all">
                     <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <p className="font-semibold">{discharge.room}</p>
-                        <p className="text-sm text-muted-foreground">Room</p>
-                      </div>
+                      <div className="text-center"><p className="font-semibold text-sm font-mono">{d.room}</p><p className="text-[10px] text-muted-foreground">Room</p></div>
                       <div>
-                        <p className="font-medium">{discharge.patient}</p>
-                        <p className="text-sm text-muted-foreground">{discharge.doctor}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Discharged: {discharge.dischargeDate} at {discharge.dischargeTime}
-                        </p>
+                        <p className="font-medium text-sm">{d.patient}</p>
+                        <p className="text-xs text-muted-foreground">{d.doctor}</p>
+                        <p className="text-[10px] text-muted-foreground">Discharged: {d.dischargeDate} at {d.dischargeTime}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Badge variant="secondary">Discharged</Badge>
-                      <Badge variant="outline">{discharge.condition}</Badge>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          <FileText className="w-4 h-4 mr-1" />
-                          Summary
-                        </Button>
-                        <Button size="sm" variant="outline">Follow-up</Button>
-                      </div>
+                      <Button size="sm" variant="outline" className="text-xs h-7"><FileText className="w-3 h-3 mr-1" /> Summary</Button>
+                      <Button size="sm" variant="outline" className="text-xs h-7">Follow-up</Button>
                     </div>
                   </div>
                 ))}
@@ -219,27 +128,19 @@ export function Admissions() {
 
         <TabsContent value="pending" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Pending Actions</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Pending Actions</CardTitle></CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 border-l-4 border-warning bg-warning/5 rounded">
+              <div className="space-y-3">
+                <div className="p-3 border-l-2 border-warning bg-warning/5 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Insurance Verification Required</p>
-                      <p className="text-sm text-muted-foreground">Robert Davis - Room B-205</p>
-                    </div>
-                    <Button size="sm" variant="warning">Verify Now</Button>
+                    <div><p className="font-medium text-sm">Insurance Verification Required</p><p className="text-xs text-muted-foreground">Robert Davis - Room B-205</p></div>
+                    <Button size="sm" variant="warning" className="text-xs h-7">Verify Now</Button>
                   </div>
                 </div>
-                <div className="p-4 border-l-4 border-primary bg-primary/5 rounded">
+                <div className="p-3 border-l-2 border-primary bg-primary/5 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Discharge Summary Pending</p>
-                      <p className="text-sm text-muted-foreground">Maria Garcia - Room A-205</p>
-                    </div>
-                    <Button size="sm" variant="default">Complete Summary</Button>
+                    <div><p className="font-medium text-sm">Discharge Summary Pending</p><p className="text-xs text-muted-foreground">Maria Garcia - Room A-205</p></div>
+                    <Button size="sm" variant="default" className="text-xs h-7">Complete Summary</Button>
                   </div>
                 </div>
               </div>

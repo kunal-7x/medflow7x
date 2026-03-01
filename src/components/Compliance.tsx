@@ -114,8 +114,8 @@ export function Compliance() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Compliance & Audit</h1>
-          <p className="text-muted-foreground">Monitor regulatory compliance and audit trails</p>
+          <h1 className="text-2xl font-bold text-gradient-gold">Compliance & Audit</h1>
+          <p className="text-muted-foreground text-sm mt-1">Monitor regulatory compliance and audit trails</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2">
