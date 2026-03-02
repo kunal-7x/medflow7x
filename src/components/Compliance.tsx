@@ -284,7 +284,7 @@ export function Compliance() {
             <CardContent>
               <div className="space-y-2">
                 {filteredLogs.map((log) => (
-                  <div key={log.id} className="flex items-center justify-between p-3 border rounded hover:bg-accent transition-colors">
+                  <div key={log.id} className="flex items-center justify-between p-3 border border-border/30 rounded-xl hover:bg-secondary/30 transition-all duration-200">
                     <div className="flex items-center gap-4">
                       <div className={`w-2 h-2 rounded-full ${log.status === 'success' ? 'bg-success' : 'bg-destructive'}`} />
                       <div>

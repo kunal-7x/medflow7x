@@ -179,7 +179,7 @@ export function Orders() {
                 {orders.map((order) => {
                   const TypeIcon = getTypeIcon(order.type);
                   return (
-                    <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+                    <div key={order.id} className="flex items-center justify-between p-4 border border-border/30 rounded-2xl hover:bg-secondary/30 transition-all duration-200">
                       <div className="flex items-center gap-4">
                         <TypeIcon className="w-8 h-8 text-primary" />
                         <div>
@@ -221,7 +221,7 @@ export function Orders() {
                 {results.map((result) => {
                   const TypeIcon = getTypeIcon(result.type);
                   return (
-                    <div key={result.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+                    <div key={result.id} className="flex items-center justify-between p-4 border border-border/30 rounded-2xl hover:bg-secondary/30 transition-all duration-200">
                       <div className="flex items-center gap-4">
                         <TypeIcon className="w-8 h-8 text-success" />
                         <div>

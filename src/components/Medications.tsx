@@ -173,7 +173,7 @@ export function Medications() {
             <CardContent>
               <div className="space-y-4">
                 {medications.map((med) => (
-                  <div key={med.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+                  <div key={med.id} className="flex items-center justify-between p-4 border border-border/30 rounded-2xl hover:bg-secondary/30 transition-all duration-200">
                     <div className="flex items-center gap-4">
                       <Pill className="w-8 h-8 text-primary" />
                       <div>
@@ -211,7 +211,7 @@ export function Medications() {
             <CardContent>
               <div className="space-y-4">
                 {inventory.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+                  <div key={item.id} className="flex items-center justify-between p-4 border border-border/30 rounded-2xl hover:bg-secondary/30 transition-all duration-200">
                     <div className="flex items-center gap-4">
                       <Package className="w-8 h-8 text-primary" />
                       <div>

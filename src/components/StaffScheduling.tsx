@@ -180,7 +180,7 @@ export function StaffScheduling() {
                     </div>
                     <div className="space-y-3">
                       {day.shifts.map((shift, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-accent/50 rounded">
+                        <div key={index} className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl border border-border/20">
                           <div>
                             <p className="font-medium">{shift.time}</p>
                             <p className="text-sm text-muted-foreground">{shift.department}</p>
@@ -210,7 +210,7 @@ export function StaffScheduling() {
             <CardContent>
               <div className="space-y-4">
                 {staff.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+                  <div key={member.id} className="flex items-center justify-between p-4 border border-border/30 rounded-2xl hover:bg-secondary/30 transition-all duration-200">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                         <Users className="w-5 h-5 text-primary" />
@@ -258,7 +258,7 @@ export function StaffScheduling() {
             <CardContent>
               <div className="space-y-4">
                 {requests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+                  <div key={request.id} className="flex items-center justify-between p-4 border border-border/30 rounded-2xl hover:bg-secondary/30 transition-all duration-200">
                     <div className="flex items-center gap-4">
                       <Calendar className="w-8 h-8 text-primary" />
                       <div>
