@@ -18,9 +18,9 @@ export function BedAssignmentModal({ isOpen, onClose, bed }: BedAssignmentModalP
   
   const [selectedPatientId, setSelectedPatientId] = useState('');
 
+  // Show ALL active patients - those without beds AND those with beds (for transfers)
   const availablePatients = patients.filter(patient => 
-    patient.status === 'active' && 
-    (patient.bedNumber === 'Unassigned' || patient.bedNumber.includes('Unassigned'))
+    patient.status === 'active'
   );
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,6 +41,7 @@ export function BedAssignmentModal({ isOpen, onClose, bed }: BedAssignmentModalP
         title: "Success",
         description: `Patient assigned to bed ${bed.number}`
       });
+      setSelectedPatientId('');
       onClose();
     } catch (error) {
       toast({
@@ -60,34 +61,30 @@ export function BedAssignmentModal({ isOpen, onClose, bed }: BedAssignmentModalP
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="patient">Select Patient</Label>
+            <Label htmlFor="patient">Select Patient ({availablePatients.length} available)</Label>
             <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a patient" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px]">
                 {availablePatients.map(patient => (
                   <SelectItem key={patient.id} value={patient.id}>
-                    {patient.name} ({patient.id}) - {patient.diagnosis}
+                    {patient.name} ({patient.id}) - {patient.diagnosis.slice(0, 30)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground space-y-1">
             <p><strong>Bed:</strong> {bed.number}</p>
             <p><strong>Ward:</strong> {bed.ward}</p>
             <p><strong>Floor:</strong> {bed.floor}</p>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              Assign Patient
-            </Button>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit">Assign Patient</Button>
           </DialogFooter>
         </form>
       </DialogContent>

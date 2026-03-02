@@ -4,90 +4,43 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { 
-  Shield, 
-  FileCheck, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock,
-  Download,
-  Search,
-  Eye,
-  Calendar
-} from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Shield, FileCheck, AlertTriangle, CheckCircle, Clock, Download, Search, Eye, Calendar, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { downloadTextReport, generateComplianceReport } from "@/lib/exportUtils";
 
 const mockAudits = [
-  {
-    id: 1,
-    type: "HIPAA Compliance",
-    status: "compliant",
-    lastCheck: "2024-01-10",
-    nextDue: "2024-04-10",
-    score: 98
-  },
-  {
-    id: 2,
-    type: "Joint Commission",
-    status: "pending",
-    lastCheck: "2024-01-05",
-    nextDue: "2024-01-25",
-    score: 85
-  },
-  {
-    id: 3,
-    type: "Fire Safety",
-    status: "non-compliant",
-    lastCheck: "2024-01-08",
-    nextDue: "2024-01-20",
-    score: 72
-  },
-  {
-    id: 4,
-    type: "Medication Safety",
-    status: "compliant",
-    lastCheck: "2024-01-12",
-    nextDue: "2024-02-12",
-    score: 96
-  }
+  { id: 1, type: "HIPAA Compliance", status: "compliant", lastCheck: "2024-01-10", nextDue: "2024-04-10", score: 98 },
+  { id: 2, type: "Joint Commission", status: "pending", lastCheck: "2024-01-05", nextDue: "2024-01-25", score: 85 },
+  { id: 3, type: "Fire Safety", status: "non-compliant", lastCheck: "2024-01-08", nextDue: "2024-01-20", score: 72 },
+  { id: 4, type: "Medication Safety", status: "compliant", lastCheck: "2024-01-12", nextDue: "2024-02-12", score: 96 },
+  { id: 5, type: "Infection Control", status: "compliant", lastCheck: "2024-01-14", nextDue: "2024-03-14", score: 94 },
+  { id: 6, type: "Patient Safety", status: "pending", lastCheck: "2024-01-02", nextDue: "2024-02-02", score: 88 },
 ];
 
 const mockLogs = [
-  {
-    id: 1,
-    timestamp: "2024-01-15 14:30:25",
-    user: "Dr. Smith",
-    action: "Patient Record Access",
-    resource: "Patient #12345",
-    status: "success",
-    ip: "192.168.1.100"
-  },
-  {
-    id: 2,
-    timestamp: "2024-01-15 14:28:10",
-    user: "Nurse Johnson",
-    action: "Medication Administration",
-    resource: "Patient #12346",
-    status: "success",
-    ip: "192.168.1.101"
-  },
-  {
-    id: 3,
-    timestamp: "2024-01-15 14:25:55",
-    user: "Admin Wilson",
-    action: "Failed Login Attempt",
-    resource: "Authentication System",
-    status: "failed",
-    ip: "192.168.1.102"
-  }
+  { id: 1, timestamp: "2024-01-15 14:30:25", user: "Dr. Smith", action: "Patient Record Access", resource: "Patient #12345", status: "success", ip: "192.168.1.100" },
+  { id: 2, timestamp: "2024-01-15 14:28:10", user: "Nurse Johnson", action: "Medication Administration", resource: "Patient #12346", status: "success", ip: "192.168.1.101" },
+  { id: 3, timestamp: "2024-01-15 14:25:55", user: "Admin Wilson", action: "Failed Login Attempt", resource: "Authentication System", status: "failed", ip: "192.168.1.102" },
+  { id: 4, timestamp: "2024-01-15 14:20:30", user: "Dr. Brown", action: "Prescription Update", resource: "Patient #12347", status: "success", ip: "192.168.1.103" },
+  { id: 5, timestamp: "2024-01-15 14:15:00", user: "Tech Davis", action: "Lab Result Upload", resource: "Lab System", status: "success", ip: "192.168.1.104" },
 ];
 
 export function Compliance() {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState("overview");
+  const [audits, setAudits] = useState(mockAudits);
+  const [viewAudit, setViewAudit] = useState<any>(null);
+  const [isNewAuditOpen, setIsNewAuditOpen] = useState(false);
+  const [newAudit, setNewAudit] = useState({ type: '', date: '' });
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "compliant": return "success";
+      case "compliant": return "default";
       case "pending": return "warning";
       case "non-compliant": return "destructive";
       default: return "secondary";
@@ -103,78 +56,57 @@ export function Compliance() {
     }
   };
 
+  const handleExportReport = () => {
+    const report = generateComplianceReport(audits);
+    downloadTextReport(report, 'compliance_report');
+    toast({ title: "Report Exported", description: "Compliance report downloaded" });
+  };
+
+  const handleNewAudit = () => {
+    if (!newAudit.type) { toast({ title: "Error", description: "Select audit type", variant: "destructive" }); return; }
+    const audit = {
+      id: Date.now(), type: newAudit.type, status: 'pending' as const,
+      lastCheck: new Date().toISOString().split('T')[0],
+      nextDue: newAudit.date || new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+      score: 0
+    };
+    setAudits(prev => [...prev, audit]);
+    toast({ title: "Audit Created", description: `${newAudit.type} audit scheduled` });
+    setIsNewAuditOpen(false);
+    setNewAudit({ type: '', date: '' });
+  };
+
+  const handleScheduleAudit = (type: string) => {
+    toast({ title: "Audit Scheduled", description: `${type} audit scheduled for next quarter` });
+    setIsScheduleOpen(false);
+  };
+
   const filteredLogs = mockLogs.filter(log =>
-    log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.resource.toLowerCase().includes(searchTerm.toLowerCase())
+    log.user.toLowerCase().includes(searchTerm.toLowerCase()) || log.action.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gradient-gold">Compliance & Audit</h1>
           <p className="text-muted-foreground text-sm mt-1">Monitor regulatory compliance and audit trails</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Download className="w-4 h-4" />
-            Export Report
-          </Button>
-          <Button className="gap-2">
-            <FileCheck className="w-4 h-4" />
-            New Audit
-          </Button>
+          <Button variant="outline" className="gap-2" onClick={handleExportReport}><Download className="w-4 h-4" /> Export Report</Button>
+          <Button className="gap-2" onClick={() => setIsNewAuditOpen(true)}><Plus className="w-4 h-4" /> New Audit</Button>
         </div>
       </div>
 
-      {/* Compliance Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Shield className="w-8 h-8 text-success" />
-              <div>
-                <p className="text-2xl font-bold">92%</p>
-                <p className="text-sm text-muted-foreground">Overall Compliance</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-8 h-8 text-primary" />
-              <div>
-                <p className="text-2xl font-bold">18</p>
-                <p className="text-sm text-muted-foreground">Passed Audits</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Clock className="w-8 h-8 text-warning" />
-              <div>
-                <p className="text-2xl font-bold">3</p>
-                <p className="text-sm text-muted-foreground">Pending Reviews</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-8 h-8 text-destructive" />
-              <div>
-                <p className="text-2xl font-bold">2</p>
-                <p className="text-sm text-muted-foreground">Action Items</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {[
+          { icon: Shield, value: `${Math.round(audits.reduce((s, a) => s + a.score, 0) / audits.length)}%`, label: "Overall Compliance", color: "text-primary" },
+          { icon: CheckCircle, value: audits.filter(a => a.status === 'compliant').length, label: "Passed Audits", color: "text-primary" },
+          { icon: Clock, value: audits.filter(a => a.status === 'pending').length, label: "Pending Reviews", color: "text-warning" },
+          { icon: AlertTriangle, value: audits.filter(a => a.status === 'non-compliant').length, label: "Action Items", color: "text-destructive" },
+        ].map((s, i) => (
+          <Card key={i}><CardContent className="p-6"><div className="flex items-center gap-3"><s.icon className={`w-8 h-8 ${s.color}`} /><div><p className="text-2xl font-bold">{s.value}</p><p className="text-sm text-muted-foreground">{s.label}</p></div></div></CardContent></Card>
+        ))}
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
@@ -187,32 +119,24 @@ export function Compliance() {
 
         <TabsContent value="overview" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Compliance Status</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Compliance Status</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockAudits.map((audit) => (
-                  <div key={audit.id} className="flex items-center justify-between p-4 border rounded-lg">
+                {audits.map((audit) => (
+                  <div key={audit.id} className="flex items-center justify-between p-4 border border-border/30 rounded-lg">
                     <div className="flex items-center gap-4">
                       {getStatusIcon(audit.status)}
                       <div>
                         <p className="font-medium">{audit.type}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Last checked: {audit.lastCheck} • Next due: {audit.nextDue}
-                        </p>
+                        <p className="text-sm text-muted-foreground">Last: {audit.lastCheck} • Next: {audit.nextDue}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <p className="font-medium">{audit.score}%</p>
-                        <Badge variant={getStatusColor(audit.status) as any}>
-                          {audit.status}
-                        </Badge>
+                        <Badge variant={getStatusColor(audit.status) as any}>{audit.status}</Badge>
                       </div>
-                      <Button size="sm" variant="outline">
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setViewAudit(audit)}><Eye className="w-4 h-4" /></Button>
                     </div>
                   </div>
                 ))}
@@ -223,43 +147,21 @@ export function Compliance() {
 
         <TabsContent value="audits" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Audit Management</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Audit Management</CardTitle></CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {['HIPAA Compliance', 'Joint Commission', 'Fire Safety'].map((type) => (
+                  <Card key={type}>
                     <CardContent className="p-4">
                       <div className="text-center">
                         <Shield className="w-8 h-8 mx-auto text-primary mb-2" />
-                        <p className="font-medium">HIPAA Compliance</p>
-                        <p className="text-sm text-muted-foreground">Privacy & Security</p>
-                        <Button size="sm" className="mt-2">Schedule Audit</Button>
+                        <p className="font-medium">{type}</p>
+                        <p className="text-sm text-muted-foreground mb-2">{type.includes('HIPAA') ? 'Privacy & Security' : type.includes('Joint') ? 'Quality Standards' : 'Emergency Preparedness'}</p>
+                        <Button size="sm" onClick={() => handleScheduleAudit(type)}>Schedule Audit</Button>
                       </div>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-center">
-                        <FileCheck className="w-8 h-8 mx-auto text-primary mb-2" />
-                        <p className="font-medium">Joint Commission</p>
-                        <p className="text-sm text-muted-foreground">Quality Standards</p>
-                        <Button size="sm" className="mt-2">Schedule Audit</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-center">
-                        <CheckCircle className="w-8 h-8 mx-auto text-primary mb-2" />
-                        <p className="font-medium">Fire Safety</p>
-                        <p className="text-sm text-muted-foreground">Emergency Preparedness</p>
-                        <Button size="sm" className="mt-2">Schedule Audit</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -272,12 +174,7 @@ export function Compliance() {
                 <CardTitle>Audit Trail</CardTitle>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search logs..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-64"
-                  />
+                  <Input placeholder="Search logs..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 w-64" />
                 </div>
               </div>
             </CardHeader>
@@ -286,19 +183,15 @@ export function Compliance() {
                 {filteredLogs.map((log) => (
                   <div key={log.id} className="flex items-center justify-between p-3 border border-border/30 rounded-xl hover:bg-secondary/30 transition-all duration-200">
                     <div className="flex items-center gap-4">
-                      <div className={`w-2 h-2 rounded-full ${log.status === 'success' ? 'bg-success' : 'bg-destructive'}`} />
+                      <div className={`w-2 h-2 rounded-full ${log.status === 'success' ? 'bg-primary' : 'bg-destructive'}`} />
                       <div>
                         <p className="text-sm font-medium">{log.action}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {log.user} • {log.resource} • {log.ip}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{log.user} • {log.resource} • {log.ip}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">{log.timestamp}</p>
-                      <Badge variant={log.status === 'success' ? 'secondary' : 'destructive'} className="text-xs">
-                        {log.status}
-                      </Badge>
+                      <Badge variant={log.status === 'success' ? 'secondary' : 'destructive'} className="text-xs">{log.status}</Badge>
                     </div>
                   </div>
                 ))}
@@ -309,9 +202,7 @@ export function Compliance() {
 
         <TabsContent value="policies" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Policy Management</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Policy Management</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
@@ -325,17 +216,11 @@ export function Compliance() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">{policy.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {policy.version} • Updated {policy.lastUpdated}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{policy.version} • Updated {policy.lastUpdated}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={policy.status === 'active' ? 'default' : 'secondary'}>
-                            {policy.status}
-                          </Badge>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
+                          <Badge variant={policy.status === 'active' ? 'default' : 'secondary'}>{policy.status}</Badge>
+                          <Button size="sm" variant="outline" onClick={() => toast({ title: "Policy Viewed", description: `Viewing ${policy.name}` })}><Eye className="w-4 h-4" /></Button>
                         </div>
                       </div>
                     </CardContent>
@@ -346,6 +231,49 @@ export function Compliance() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* View Audit Modal */}
+      <Dialog open={!!viewAudit} onOpenChange={() => setViewAudit(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Audit Details - {viewAudit?.type}</DialogTitle></DialogHeader>
+          {viewAudit && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-2">
+                <div><span className="text-muted-foreground">Type:</span> {viewAudit.type}</div>
+                <div><span className="text-muted-foreground">Score:</span> <span className="font-bold">{viewAudit.score}%</span></div>
+                <div><span className="text-muted-foreground">Status:</span> <Badge variant={getStatusColor(viewAudit.status) as any}>{viewAudit.status}</Badge></div>
+                <div><span className="text-muted-foreground">Last Check:</span> {viewAudit.lastCheck}</div>
+                <div><span className="text-muted-foreground">Next Due:</span> {viewAudit.nextDue}</div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* New Audit Modal */}
+      <Dialog open={isNewAuditOpen} onOpenChange={() => setIsNewAuditOpen(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Schedule New Audit</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Audit Type</Label>
+              <Select value={newAudit.type} onValueChange={v => setNewAudit(a => ({...a, type: v}))}>
+                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent>
+                  {['HIPAA Compliance','Joint Commission','Fire Safety','Medication Safety','Infection Control','Patient Safety','Equipment Safety','Data Privacy'].map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Scheduled Date</Label><Input type="date" value={newAudit.date} onChange={e => setNewAudit(a => ({...a, date: e.target.value}))} /></div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsNewAuditOpen(false)}>Cancel</Button>
+              <Button onClick={handleNewAudit}>Create Audit</Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
