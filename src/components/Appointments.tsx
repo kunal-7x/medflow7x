@@ -145,7 +145,7 @@ export function Appointments() {
             <CardContent>
               <div className="space-y-4">
                 {filteredAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+                  <div key={appointment.id} className="flex items-center justify-between p-4 border border-border/30 rounded-2xl hover:bg-secondary/30 transition-all duration-200">
                     <div className="flex items-center gap-4">
                       <div className="text-center">
                         <p className="font-semibold">{appointment.time}</p>

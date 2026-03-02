@@ -242,7 +242,7 @@ export function Notifications() {
                 {filteredNotifications.map((notification) => (
                   <div 
                     key={notification.id} 
-                    className={`flex items-start gap-4 p-4 border-b last:border-b-0 hover:bg-accent transition-colors ${
+                    className={`flex items-start gap-4 p-4 border-b border-border/20 last:border-b-0 hover:bg-secondary/30 transition-all duration-200 ${
                       !notification.isRead ? 'bg-primary/5' : ''
                     }`}
                   >

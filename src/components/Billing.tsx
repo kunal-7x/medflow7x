@@ -181,7 +181,7 @@ export function Billing() {
             <CardContent>
               <div className="space-y-4">
                 {bills.map((bill) => (
-                  <div key={bill.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+                  <div key={bill.id} className="flex items-center justify-between p-4 border border-border/30 rounded-2xl hover:bg-secondary/30 transition-all duration-200">
                     <div className="flex items-center gap-4">
                       <DollarSign className="w-8 h-8 text-primary" />
                       <div>
@@ -220,7 +220,7 @@ export function Billing() {
             <CardContent>
               <div className="space-y-4">
                 {claims.map((claim) => (
-                  <div key={claim.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors">
+                  <div key={claim.id} className="flex items-center justify-between p-4 border border-border/30 rounded-2xl hover:bg-secondary/30 transition-all duration-200">
                     <div className="flex items-center gap-4">
                       <FileText className="w-8 h-8 text-primary" />
                       <div>
