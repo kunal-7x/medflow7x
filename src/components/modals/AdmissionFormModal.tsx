@@ -36,7 +36,7 @@ export function AdmissionFormModal({ isOpen, onClose, type, patientId }: Admissi
 
   const availableBeds = beds.filter(bed => bed.status === 'available');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (type === 'admission') {
@@ -50,7 +50,7 @@ export function AdmissionFormModal({ isOpen, onClose, type, patientId }: Admissi
       }
 
       try {
-        const patientId = addPatient({
+        const patientId = await addPatient({
           name: formData.name,
           age: parseInt(formData.age),
           gender: formData.gender,
