@@ -50,7 +50,7 @@ export function AdmissionFormModal({ isOpen, onClose, type, patientId }: Admissi
       }
 
       try {
-        const patientId = addPatient({
+        const patientId = await addPatient({
           name: formData.name,
           age: parseInt(formData.age),
           gender: formData.gender,
