@@ -1,15 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, FileCheck, AlertTriangle, CheckCircle, Clock, Download, Search, Eye, Calendar, Plus } from "lucide-react";
+import { Shield, FileCheck, AlertTriangle, CheckCircle, Clock, Download, Search, Eye, Calendar, Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { downloadTextReport, generateComplianceReport } from "@/lib/exportUtils";
+import { supabase } from "@/integrations/supabase/client";
+
+interface AuditLogEntry {
+  id: string;
+  user_email: string | null;
+  user_role: string | null;
+  action: string;
+  table_name: string;
+  record_id: string;
+  before_data: any;
+  after_data: any;
+  created_at: string;
+}
 
 const mockAudits = [
   { id: 1, type: "HIPAA Compliance", status: "compliant", lastCheck: "2024-01-10", nextDue: "2024-04-10", score: 98 },
@@ -20,14 +33,6 @@ const mockAudits = [
   { id: 6, type: "Patient Safety", status: "pending", lastCheck: "2024-01-02", nextDue: "2024-02-02", score: 88 },
 ];
 
-const mockLogs = [
-  { id: 1, timestamp: "2024-01-15 14:30:25", user: "Dr. Smith", action: "Patient Record Access", resource: "Patient #12345", status: "success", ip: "192.168.1.100" },
-  { id: 2, timestamp: "2024-01-15 14:28:10", user: "Nurse Johnson", action: "Medication Administration", resource: "Patient #12346", status: "success", ip: "192.168.1.101" },
-  { id: 3, timestamp: "2024-01-15 14:25:55", user: "Admin Wilson", action: "Failed Login Attempt", resource: "Authentication System", status: "failed", ip: "192.168.1.102" },
-  { id: 4, timestamp: "2024-01-15 14:20:30", user: "Dr. Brown", action: "Prescription Update", resource: "Patient #12347", status: "success", ip: "192.168.1.103" },
-  { id: 5, timestamp: "2024-01-15 14:15:00", user: "Tech Davis", action: "Lab Result Upload", resource: "Lab System", status: "success", ip: "192.168.1.104" },
-];
-
 export function Compliance() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,7 +41,28 @@ export function Compliance() {
   const [viewAudit, setViewAudit] = useState<any>(null);
   const [isNewAuditOpen, setIsNewAuditOpen] = useState(false);
   const [newAudit, setNewAudit] = useState({ type: '', date: '' });
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+
+  // Real audit logs from database
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedTab === 'logs') {
+      fetchAuditLogs();
+    }
+  }, [selectedTab]);
+
+  const fetchAuditLogs = async () => {
+    setLogsLoading(true);
+    const { data, error } = await supabase
+      .from('audit_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (data) setAuditLogs(data as AuditLogEntry[]);
+    if (error) console.error('Failed to fetch audit logs:', error);
+    setLogsLoading(false);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -76,13 +102,19 @@ export function Compliance() {
     setNewAudit({ type: '', date: '' });
   };
 
-  const handleScheduleAudit = (type: string) => {
-    toast({ title: "Audit Scheduled", description: `${type} audit scheduled for next quarter` });
-    setIsScheduleOpen(false);
+  const getActionColor = (action: string) => {
+    switch (action) {
+      case 'create': return 'default';
+      case 'update': return 'warning';
+      case 'delete': return 'destructive';
+      default: return 'secondary';
+    }
   };
 
-  const filteredLogs = mockLogs.filter(log =>
-    log.user.toLowerCase().includes(searchTerm.toLowerCase()) || log.action.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredLogs = auditLogs.filter(log =>
+    (log.user_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    log.table_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -157,7 +189,7 @@ export function Compliance() {
                         <Shield className="w-8 h-8 mx-auto text-primary mb-2" />
                         <p className="font-medium">{type}</p>
                         <p className="text-sm text-muted-foreground mb-2">{type.includes('HIPAA') ? 'Privacy & Security' : type.includes('Joint') ? 'Quality Standards' : 'Emergency Preparedness'}</p>
-                        <Button size="sm" onClick={() => handleScheduleAudit(type)}>Schedule Audit</Button>
+                        <Button size="sm" onClick={() => toast({ title: "Audit Scheduled", description: `${type} audit scheduled` })}>Schedule Audit</Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -171,31 +203,49 @@ export function Compliance() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Audit Trail</CardTitle>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder="Search logs..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 w-64" />
+                <CardTitle>Database Audit Trail</CardTitle>
+                <div className="flex gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Search logs..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 w-64" />
+                  </div>
+                  <Button variant="outline" size="sm" onClick={fetchAuditLogs}>
+                    {logsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Refresh'}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {filteredLogs.map((log) => (
-                  <div key={log.id} className="flex items-center justify-between p-3 border border-border/30 rounded-xl hover:bg-secondary/30 transition-all duration-200">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-2 h-2 rounded-full ${log.status === 'success' ? 'bg-primary' : 'bg-destructive'}`} />
-                      <div>
-                        <p className="text-sm font-medium">{log.action}</p>
-                        <p className="text-xs text-muted-foreground">{log.user} • {log.resource} • {log.ip}</p>
+              {logsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredLogs.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  No audit logs found. Actions performed in the system will appear here.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                  {filteredLogs.map((log) => (
+                    <div key={log.id} className="flex items-center justify-between p-3 border border-border/30 rounded-xl hover:bg-secondary/30 transition-all duration-200">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-2 h-2 rounded-full ${
+                          log.action === 'create' ? 'bg-primary' :
+                          log.action === 'update' ? 'bg-warning' : 'bg-destructive'
+                        }`} />
+                        <div>
+                          <p className="text-sm font-medium capitalize">{log.action} on <span className="font-mono text-primary">{log.table_name}</span></p>
+                          <p className="text-xs text-muted-foreground">{log.user_email || 'System'} • {log.user_role || 'N/A'} • Record: {log.record_id.slice(0, 8)}...</p>
+                        </div>
+                      </div>
+                      <div className="text-right flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</p>
+                        <Badge variant={getActionColor(log.action) as any} className="text-xs">{log.action}</Badge>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">{log.timestamp}</p>
-                      <Badge variant={log.status === 'success' ? 'secondary' : 'destructive'} className="text-xs">{log.status}</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

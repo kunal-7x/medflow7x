@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { generateLargeDataset } from '@/lib/mockDataGenerator';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Types
+// Types mapped to DB schema
 export interface Patient {
   id: string;
   name: string;
@@ -34,6 +35,11 @@ export interface Patient {
     emergencyContact: string;
   };
   status: 'active' | 'discharged';
+  dateOfBirth?: string;
+  bloodGroup?: string;
+  address?: string;
+  ward?: string;
+  dischargeDate?: string;
 }
 
 export interface Bed {
@@ -127,7 +133,6 @@ export interface Bill {
   insuranceClaimId?: string;
 }
 
-// Context
 interface HospitalDataContextType {
   patients: Patient[];
   beds: Bed[];
@@ -137,268 +142,564 @@ interface HospitalDataContextType {
   staff: Staff[];
   alerts: Alert[];
   bills: Bill[];
+  loading: boolean;
   
-  addPatient: (patient: Omit<Patient, 'id'>) => string;
-  updatePatient: (id: string, updates: Partial<Patient>) => void;
-  deletePatient: (id: string) => void;
-  dischargePatient: (id: string) => void;
-  updatePatientVitals: (id: string, vitals: Patient['vitals']) => void;
+  addPatient: (patient: Omit<Patient, 'id'>) => Promise<string>;
+  updatePatient: (id: string, updates: Partial<Patient>) => Promise<void>;
+  deletePatient: (id: string) => Promise<void>;
+  dischargePatient: (id: string) => Promise<void>;
+  updatePatientVitals: (id: string, vitals: Patient['vitals']) => Promise<void>;
   
-  assignBed: (bedId: string, patientId: string) => void;
-  releaseBed: (bedId: string) => void;
-  transferPatient: (patientId: string, newBedId: string) => void;
-  updateBedStatus: (bedId: string, status: Bed['status']) => void;
+  assignBed: (bedId: string, patientId: string) => Promise<void>;
+  releaseBed: (bedId: string) => Promise<void>;
+  transferPatient: (patientId: string, newBedId: string) => Promise<void>;
+  updateBedStatus: (bedId: string, status: Bed['status']) => Promise<void>;
   
-  addAppointment: (appointment: Omit<Appointment, 'id'>) => string;
-  updateAppointment: (id: string, updates: Partial<Appointment>) => void;
-  deleteAppointment: (id: string) => void;
+  addAppointment: (appointment: Omit<Appointment, 'id'>) => Promise<string>;
+  updateAppointment: (id: string, updates: Partial<Appointment>) => Promise<void>;
+  deleteAppointment: (id: string) => Promise<void>;
   
-  addOrder: (order: Omit<Order, 'id'>) => string;
-  updateOrder: (id: string, updates: Partial<Order>) => void;
-  deleteOrder: (id: string) => void;
+  addOrder: (order: Omit<Order, 'id'>) => Promise<string>;
+  updateOrder: (id: string, updates: Partial<Order>) => Promise<void>;
+  deleteOrder: (id: string) => Promise<void>;
   
-  addMedication: (medication: Omit<Medication, 'id'>) => string;
-  updateMedication: (id: string, updates: Partial<Medication>) => void;
-  deleteMedication: (id: string) => void;
-  administerMedication: (id: string, administeredBy: string, notes?: string) => void;
+  addMedication: (medication: Omit<Medication, 'id'>) => Promise<string>;
+  updateMedication: (id: string, updates: Partial<Medication>) => Promise<void>;
+  deleteMedication: (id: string) => Promise<void>;
+  administerMedication: (id: string, administeredBy: string, notes?: string) => Promise<void>;
   
-  addStaff: (staff: Omit<Staff, 'id'>) => string;
-  updateStaff: (id: string, updates: Partial<Staff>) => void;
-  deleteStaff: (id: string) => void;
+  addStaff: (staff: Omit<Staff, 'id'>) => Promise<string>;
+  updateStaff: (id: string, updates: Partial<Staff>) => Promise<void>;
+  deleteStaff: (id: string) => Promise<void>;
   
-  addAlert: (alert: Omit<Alert, 'id'>) => string;
-  markAlertAsRead: (id: string) => void;
-  markAllAlertsAsRead: () => void;
-  deleteAlert: (id: string) => void;
+  addAlert: (alert: Omit<Alert, 'id'>) => Promise<string>;
+  markAlertAsRead: (id: string) => Promise<void>;
+  markAllAlertsAsRead: () => Promise<void>;
+  deleteAlert: (id: string) => Promise<void>;
   
-  addBill: (bill: Omit<Bill, 'id'>) => string;
-  updateBill: (id: string, updates: Partial<Bill>) => void;
-  deleteBill: (id: string) => void;
+  addBill: (bill: Omit<Bill, 'id'>) => Promise<string>;
+  updateBill: (id: string, updates: Partial<Bill>) => Promise<void>;
+  deleteBill: (id: string) => Promise<void>;
   
   getAnalytics: () => any;
-  resetData: () => void;
-  exportAllData: () => any;
-  importData: (data: any) => void;
+  refreshData: () => Promise<void>;
 }
 
 const HospitalDataContext = createContext<HospitalDataContextType | null>(null);
 
+// Helper to map DB row to Patient
+function mapDbPatient(row: any): Patient {
+  return {
+    id: row.id,
+    name: row.name,
+    age: row.age || 0,
+    gender: row.gender || '',
+    condition: row.condition || 'Good',
+    bedNumber: row.bed_number || 'Unassigned',
+    admissionDate: row.admission_date || '',
+    doctor: row.doctor || '',
+    diagnosis: row.diagnosis || '',
+    allergies: row.allergies || [],
+    vitals: row.vitals || { heartRate: 0, bloodPressure: '0/0', temperature: 0, oxygenSat: 0, timestamp: '' },
+    vitalsHistory: row.vitals_history || [],
+    lastUpdated: row.updated_at ? new Date(row.updated_at).toLocaleString() : 'Unknown',
+    contactInfo: {
+      phone: row.phone || '',
+      email: row.email || '',
+      emergencyContact: row.emergency_contact || ''
+    },
+    status: row.status || 'active',
+    dateOfBirth: row.date_of_birth,
+    bloodGroup: row.blood_group,
+    address: row.address,
+    ward: row.ward,
+    dischargeDate: row.discharge_date,
+  };
+}
+
+function mapDbBed(row: any): Bed {
+  return {
+    id: row.id,
+    number: row.number,
+    ward: row.ward,
+    floor: row.floor,
+    status: row.status,
+    patientId: row.patient_id || undefined,
+    assignedDate: row.assigned_date || undefined,
+  };
+}
+
+function mapDbAppointment(row: any): Appointment {
+  return {
+    id: row.id,
+    patientId: row.patient_id || '',
+    patientName: row.patient_name,
+    doctor: row.doctor,
+    date: row.date,
+    time: row.time,
+    type: row.type,
+    status: row.status,
+    phone: row.phone || '',
+    notes: row.notes,
+  };
+}
+
+function mapDbOrder(row: any): Order {
+  return {
+    id: row.id,
+    patientId: row.patient_id || '',
+    patientName: row.patient_name,
+    type: row.type,
+    test: row.test,
+    doctor: row.doctor,
+    status: row.status,
+    ordered: row.ordered,
+    priority: row.priority,
+    result: row.result,
+    completedDate: row.completed_date,
+  };
+}
+
+function mapDbMedication(row: any): Medication {
+  return {
+    id: row.id,
+    patientId: row.patient_id || '',
+    patientName: row.patient_name,
+    medication: row.medication,
+    dosage: row.dosage,
+    frequency: row.frequency,
+    doctor: row.doctor,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    status: row.status,
+    administrationLog: row.administration_log || [],
+  };
+}
+
+function mapDbStaff(row: any): Staff {
+  return {
+    id: row.id,
+    name: row.name,
+    role: row.role,
+    department: row.department,
+    shift: row.shift,
+    phone: row.phone || '',
+    email: row.email || '',
+    status: row.status,
+  };
+}
+
+function mapDbAlert(row: any): Alert {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    message: row.message,
+    timestamp: row.created_at,
+    isRead: row.is_read,
+    patientId: row.patient_id,
+    priority: row.priority,
+  };
+}
+
+function mapDbBill(row: any): Bill {
+  return {
+    id: row.id,
+    patientId: row.patient_id || '',
+    patientName: row.patient_name,
+    amount: Number(row.amount),
+    status: row.status,
+    dueDate: row.due_date || '',
+    items: row.items || [],
+    insuranceClaimId: row.insurance_claim_id,
+  };
+}
+
 export const HospitalDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [data, setData] = useState(() => {
-    const savedData = localStorage.getItem('hospitalData');
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        // If old small dataset, regenerate
-        if (parsed.patients && parsed.patients.length < 50) {
-          return generateLargeDataset();
-        }
-        return parsed;
-      } catch {
-        return generateLargeDataset();
-      }
+  const { user } = useAuth();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [beds, setBeds] = useState<Bed[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAll = useCallback(async () => {
+    if (!user) { setLoading(false); return; }
+    setLoading(true);
+    try {
+      const [pRes, bRes, aRes, oRes, mRes, sRes, alRes, biRes] = await Promise.all([
+        supabase.from('patients').select('*').order('created_at', { ascending: false }),
+        supabase.from('beds').select('*').order('number'),
+        supabase.from('appointments').select('*').order('date', { ascending: false }),
+        supabase.from('orders').select('*').order('created_at', { ascending: false }),
+        supabase.from('medications').select('*').order('created_at', { ascending: false }),
+        supabase.from('staff').select('*').order('name'),
+        supabase.from('alerts').select('*').order('created_at', { ascending: false }),
+        supabase.from('bills').select('*').order('created_at', { ascending: false }),
+      ]);
+      
+      setPatients((pRes.data || []).map(mapDbPatient));
+      setBeds((bRes.data || []).map(mapDbBed));
+      setAppointments((aRes.data || []).map(mapDbAppointment));
+      setOrders((oRes.data || []).map(mapDbOrder));
+      setMedications((mRes.data || []).map(mapDbMedication));
+      setStaff((sRes.data || []).map(mapDbStaff));
+      setAlerts((alRes.data || []).map(mapDbAlert));
+      setBills((biRes.data || []).map(mapDbBill));
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
     }
-    return generateLargeDataset();
-  });
+    setLoading(false);
+  }, [user]);
 
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Realtime subscriptions for patients, beds, appointments, alerts
   useEffect(() => {
-    localStorage.setItem('hospitalData', JSON.stringify(data));
-  }, [data]);
+    if (!user) return;
+    
+    const channel = supabase.channel('realtime-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, () => {
+        supabase.from('patients').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+          if (data) setPatients(data.map(mapDbPatient));
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'beds' }, () => {
+        supabase.from('beds').select('*').order('number').then(({ data }) => {
+          if (data) setBeds(data.map(mapDbBed));
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
+        supabase.from('appointments').select('*').order('date', { ascending: false }).then(({ data }) => {
+          if (data) setAppointments(data.map(mapDbAppointment));
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'alerts' }, () => {
+        supabase.from('alerts').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+          if (data) setAlerts(data.map(mapDbAlert));
+        });
+      })
+      .subscribe();
 
-  const generateId = (prefix: string) => `${prefix}${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
-  // Patient Operations
-  const addPatient = (patient: Omit<Patient, 'id'>) => {
-    const id = generateId('P');
-    setData((prev: any) => ({ ...prev, patients: [...prev.patients, { ...patient, id }] }));
-    return id;
+  // --- Patient CRUD ---
+  const addPatient = async (patient: Omit<Patient, 'id'>) => {
+    const { data, error } = await supabase.from('patients').insert({
+      name: patient.name,
+      age: patient.age,
+      gender: patient.gender,
+      condition: patient.condition,
+      bed_number: patient.bedNumber,
+      admission_date: patient.admissionDate || new Date().toISOString().split('T')[0],
+      doctor: patient.doctor,
+      diagnosis: patient.diagnosis,
+      allergies: patient.allergies,
+      phone: patient.contactInfo?.phone,
+      email: patient.contactInfo?.email,
+      emergency_contact: patient.contactInfo?.emergencyContact,
+      status: patient.status || 'active',
+      vitals: patient.vitals || {},
+      vitals_history: patient.vitalsHistory || [],
+      blood_group: patient.bloodGroup,
+      address: patient.address,
+      ward: patient.ward,
+    }).select('id').single();
+    if (error) throw error;
+    await fetchAll();
+    return data!.id;
   };
 
-  const updatePatient = (id: string, updates: Partial<Patient>) => {
-    setData((prev: any) => ({ ...prev, patients: prev.patients.map((p: any) => p.id === id ? { ...p, ...updates } : p) }));
+  const updatePatient = async (id: string, updates: Partial<Patient>) => {
+    const dbUpdates: any = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.age !== undefined) dbUpdates.age = updates.age;
+    if (updates.gender !== undefined) dbUpdates.gender = updates.gender;
+    if (updates.condition !== undefined) dbUpdates.condition = updates.condition;
+    if (updates.bedNumber !== undefined) dbUpdates.bed_number = updates.bedNumber;
+    if (updates.doctor !== undefined) dbUpdates.doctor = updates.doctor;
+    if (updates.diagnosis !== undefined) dbUpdates.diagnosis = updates.diagnosis;
+    if (updates.allergies !== undefined) dbUpdates.allergies = updates.allergies;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.vitals !== undefined) dbUpdates.vitals = updates.vitals;
+    if (updates.vitalsHistory !== undefined) dbUpdates.vitals_history = updates.vitalsHistory;
+    if (updates.contactInfo) {
+      if (updates.contactInfo.phone !== undefined) dbUpdates.phone = updates.contactInfo.phone;
+      if (updates.contactInfo.email !== undefined) dbUpdates.email = updates.contactInfo.email;
+      if (updates.contactInfo.emergencyContact !== undefined) dbUpdates.emergency_contact = updates.contactInfo.emergencyContact;
+    }
+    dbUpdates.updated_at = new Date().toISOString();
+    
+    const { error } = await supabase.from('patients').update(dbUpdates).eq('id', id);
+    if (error) throw error;
+    await fetchAll();
   };
 
-  const deletePatient = (id: string) => {
-    setData((prev: any) => ({
-      ...prev,
-      patients: prev.patients.filter((p: any) => p.id !== id),
-      beds: prev.beds.map((b: any) => b.patientId === id ? { ...b, patientId: undefined, status: 'available' } : b)
-    }));
+  const deletePatient = async (id: string) => {
+    // Release bed first
+    const { error: bedError } = await supabase.from('beds').update({ patient_id: null, status: 'available' }).eq('patient_id', id);
+    const { error } = await supabase.from('patients').delete().eq('id', id);
+    if (error) throw error;
+    await fetchAll();
   };
 
-  const dischargePatient = (id: string) => {
-    setData((prev: any) => ({
-      ...prev,
-      patients: prev.patients.map((p: any) => p.id === id ? { ...p, status: 'discharged', bedNumber: 'Discharged' } : p),
-      beds: prev.beds.map((b: any) => b.patientId === id ? { ...b, patientId: undefined, status: 'cleaning' } : b)
-    }));
+  const dischargePatient = async (id: string) => {
+    await supabase.from('beds').update({ patient_id: null, status: 'cleaning' }).eq('patient_id', id);
+    await supabase.from('patients').update({ 
+      status: 'discharged', 
+      bed_number: 'Discharged',
+      discharge_date: new Date().toISOString().split('T')[0],
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    await fetchAll();
   };
 
-  const updatePatientVitals = (id: string, vitals: Patient['vitals']) => {
-    setData((prev: any) => ({
-      ...prev,
-      patients: prev.patients.map((p: any) => p.id === id ? { ...p, vitals, vitalsHistory: [vitals, ...p.vitalsHistory], lastUpdated: 'Just now' } : p)
-    }));
+  const updatePatientVitals = async (id: string, vitals: Patient['vitals']) => {
+    const patient = patients.find(p => p.id === id);
+    const newHistory = patient ? [vitals, ...patient.vitalsHistory] : [vitals];
+    await supabase.from('patients').update({
+      vitals,
+      vitals_history: newHistory as any,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    await fetchAll();
   };
 
-  // Bed Operations
-  const assignBed = (bedId: string, patientId: string) => {
-    setData((prev: any) => ({
-      ...prev,
-      beds: prev.beds.map((b: any) => b.id === bedId ? { ...b, patientId, status: 'occupied', assignedDate: new Date().toISOString().split('T')[0] } : b),
-      patients: prev.patients.map((p: any) => p.id === patientId ? { ...p, bedNumber: prev.beds.find((b: any) => b.id === bedId)?.number || p.bedNumber } : p)
-    }));
+  // --- Bed CRUD ---
+  const assignBed = async (bedId: string, patientId: string) => {
+    const bed = beds.find(b => b.id === bedId);
+    await supabase.from('beds').update({
+      patient_id: patientId,
+      status: 'occupied',
+      assigned_date: new Date().toISOString().split('T')[0]
+    }).eq('id', bedId);
+    if (bed) {
+      await supabase.from('patients').update({ bed_number: bed.number, updated_at: new Date().toISOString() }).eq('id', patientId);
+    }
+    await fetchAll();
   };
 
-  const releaseBed = (bedId: string) => {
-    setData((prev: any) => ({
-      ...prev,
-      beds: prev.beds.map((b: any) => b.id === bedId ? { ...b, patientId: undefined, status: 'available', assignedDate: undefined } : b)
-    }));
+  const releaseBed = async (bedId: string) => {
+    await supabase.from('beds').update({ patient_id: null, status: 'available', assigned_date: null }).eq('id', bedId);
+    await fetchAll();
   };
 
-  const transferPatient = (patientId: string, newBedId: string) => {
-    const currentBed = data.beds.find((b: any) => b.patientId === patientId);
-    if (currentBed) releaseBed(currentBed.id);
-    assignBed(newBedId, patientId);
+  const transferPatient = async (patientId: string, newBedId: string) => {
+    const currentBed = beds.find(b => b.patientId === patientId);
+    if (currentBed) await releaseBed(currentBed.id);
+    await assignBed(newBedId, patientId);
   };
 
-  const updateBedStatus = (bedId: string, status: Bed['status']) => {
-    setData((prev: any) => ({ ...prev, beds: prev.beds.map((b: any) => b.id === bedId ? { ...b, status } : b) }));
+  const updateBedStatus = async (bedId: string, status: Bed['status']) => {
+    await supabase.from('beds').update({ status }).eq('id', bedId);
+    await fetchAll();
   };
 
-  // Appointment Operations
-  const addAppointment = (appointment: Omit<Appointment, 'id'>) => {
-    const id = generateId('A');
-    setData((prev: any) => ({ ...prev, appointments: [...prev.appointments, { ...appointment, id }] }));
-    return id;
+  // --- Appointment CRUD ---
+  const addAppointment = async (appointment: Omit<Appointment, 'id'>) => {
+    const { data, error } = await supabase.from('appointments').insert({
+      patient_id: appointment.patientId || null,
+      patient_name: appointment.patientName,
+      doctor: appointment.doctor,
+      date: appointment.date,
+      time: appointment.time,
+      type: appointment.type,
+      status: appointment.status,
+      phone: appointment.phone,
+      notes: appointment.notes,
+    }).select('id').single();
+    if (error) throw error;
+    await fetchAll();
+    return data!.id;
   };
 
-  const updateAppointment = (id: string, updates: Partial<Appointment>) => {
-    setData((prev: any) => ({ ...prev, appointments: prev.appointments.map((a: any) => a.id === id ? { ...a, ...updates } : a) }));
+  const updateAppointment = async (id: string, updates: Partial<Appointment>) => {
+    const dbUpdates: any = {};
+    if (updates.doctor !== undefined) dbUpdates.doctor = updates.doctor;
+    if (updates.date !== undefined) dbUpdates.date = updates.date;
+    if (updates.time !== undefined) dbUpdates.time = updates.time;
+    if (updates.type !== undefined) dbUpdates.type = updates.type;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    dbUpdates.updated_at = new Date().toISOString();
+    
+    await supabase.from('appointments').update(dbUpdates).eq('id', id);
+    await fetchAll();
   };
 
-  const deleteAppointment = (id: string) => {
-    setData((prev: any) => ({ ...prev, appointments: prev.appointments.filter((a: any) => a.id !== id) }));
+  const deleteAppointment = async (id: string) => {
+    await supabase.from('appointments').delete().eq('id', id);
+    await fetchAll();
   };
 
-  // Order Operations
-  const addOrder = (order: Omit<Order, 'id'>) => {
-    const id = generateId('O');
-    setData((prev: any) => ({ ...prev, orders: [...prev.orders, { ...order, id }] }));
-    return id;
+  // --- Order CRUD ---
+  const addOrder = async (order: Omit<Order, 'id'>) => {
+    const { data, error } = await supabase.from('orders').insert({
+      patient_id: order.patientId || null,
+      patient_name: order.patientName,
+      type: order.type,
+      test: order.test,
+      doctor: order.doctor,
+      status: order.status,
+      priority: order.priority,
+    }).select('id').single();
+    if (error) throw error;
+    await fetchAll();
+    return data!.id;
   };
 
-  const updateOrder = (id: string, updates: Partial<Order>) => {
-    setData((prev: any) => ({ ...prev, orders: prev.orders.map((o: any) => o.id === id ? { ...o, ...updates } : o) }));
+  const updateOrder = async (id: string, updates: Partial<Order>) => {
+    const dbUpdates: any = {};
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.result !== undefined) dbUpdates.result = updates.result;
+    if (updates.completedDate !== undefined) dbUpdates.completed_date = updates.completedDate;
+    await supabase.from('orders').update(dbUpdates).eq('id', id);
+    await fetchAll();
   };
 
-  const deleteOrder = (id: string) => {
-    setData((prev: any) => ({ ...prev, orders: prev.orders.filter((o: any) => o.id !== id) }));
+  const deleteOrder = async (id: string) => {
+    await supabase.from('orders').delete().eq('id', id);
+    await fetchAll();
   };
 
-  // Medication Operations
-  const addMedication = (medication: Omit<Medication, 'id'>) => {
-    const id = generateId('M');
-    setData((prev: any) => ({ ...prev, medications: [...prev.medications, { ...medication, id }] }));
-    return id;
+  // --- Medication CRUD ---
+  const addMedication = async (medication: Omit<Medication, 'id'>) => {
+    const { data, error } = await supabase.from('medications').insert({
+      patient_id: medication.patientId || null,
+      patient_name: medication.patientName,
+      medication: medication.medication,
+      dosage: medication.dosage,
+      frequency: medication.frequency,
+      doctor: medication.doctor,
+      start_date: medication.startDate,
+      end_date: medication.endDate || null,
+      status: medication.status,
+    }).select('id').single();
+    if (error) throw error;
+    await fetchAll();
+    return data!.id;
   };
 
-  const updateMedication = (id: string, updates: Partial<Medication>) => {
-    setData((prev: any) => ({ ...prev, medications: prev.medications.map((m: any) => m.id === id ? { ...m, ...updates } : m) }));
+  const updateMedication = async (id: string, updates: Partial<Medication>) => {
+    const dbUpdates: any = {};
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.endDate !== undefined) dbUpdates.end_date = updates.endDate;
+    if (updates.administrationLog !== undefined) dbUpdates.administration_log = updates.administrationLog;
+    await supabase.from('medications').update(dbUpdates).eq('id', id);
+    await fetchAll();
   };
 
-  const deleteMedication = (id: string) => {
-    setData((prev: any) => ({ ...prev, medications: prev.medications.filter((m: any) => m.id !== id) }));
+  const deleteMedication = async (id: string) => {
+    await supabase.from('medications').delete().eq('id', id);
+    await fetchAll();
   };
 
-  const administerMedication = (id: string, administeredBy: string, notes?: string) => {
-    setData((prev: any) => ({
-      ...prev,
-      medications: prev.medications.map((m: any) => m.id === id ? {
-        ...m,
-        administrationLog: [{ timestamp: new Date().toISOString(), administeredBy, notes }, ...m.administrationLog]
-      } : m)
-    }));
+  const administerMedication = async (id: string, administeredBy: string, notes?: string) => {
+    const med = medications.find(m => m.id === id);
+    const newLog = [{ timestamp: new Date().toISOString(), administeredBy, notes }, ...(med?.administrationLog || [])];
+    await supabase.from('medications').update({ administration_log: newLog as any }).eq('id', id);
+    await fetchAll();
   };
 
-  // Staff Operations
-  const addStaff = (staff: Omit<Staff, 'id'>) => {
-    const id = generateId('S');
-    setData((prev: any) => ({ ...prev, staff: [...prev.staff, { ...staff, id }] }));
-    return id;
+  // --- Staff CRUD ---
+  const addStaff = async (s: Omit<Staff, 'id'>) => {
+    const { data, error } = await supabase.from('staff').insert({
+      name: s.name, role: s.role, department: s.department, shift: s.shift, phone: s.phone, email: s.email, status: s.status,
+    }).select('id').single();
+    if (error) throw error;
+    await fetchAll();
+    return data!.id;
   };
 
-  const updateStaff = (id: string, updates: Partial<Staff>) => {
-    setData((prev: any) => ({ ...prev, staff: prev.staff.map((s: any) => s.id === id ? { ...s, ...updates } : s) }));
+  const updateStaff = async (id: string, updates: Partial<Staff>) => {
+    await supabase.from('staff').update(updates as any).eq('id', id);
+    await fetchAll();
   };
 
-  const deleteStaff = (id: string) => {
-    setData((prev: any) => ({ ...prev, staff: prev.staff.filter((s: any) => s.id !== id) }));
+  const deleteStaff = async (id: string) => {
+    await supabase.from('staff').delete().eq('id', id);
+    await fetchAll();
   };
 
-  // Alert Operations
-  const addAlert = (alert: Omit<Alert, 'id'>) => {
-    const id = generateId('AL');
-    setData((prev: any) => ({ ...prev, alerts: [{ ...alert, id }, ...prev.alerts] }));
-    return id;
+  // --- Alert CRUD ---
+  const addAlert = async (alert: Omit<Alert, 'id'>) => {
+    const { data, error } = await supabase.from('alerts').insert({
+      type: alert.type, title: alert.title, message: alert.message, is_read: false,
+      patient_id: alert.patientId || null, priority: alert.priority,
+    }).select('id').single();
+    if (error) throw error;
+    await fetchAll();
+    return data!.id;
   };
 
-  const markAlertAsRead = (id: string) => {
-    setData((prev: any) => ({ ...prev, alerts: prev.alerts.map((a: any) => a.id === id ? { ...a, isRead: true } : a) }));
+  const markAlertAsRead = async (id: string) => {
+    await supabase.from('alerts').update({ is_read: true }).eq('id', id);
+    await fetchAll();
   };
 
-  const markAllAlertsAsRead = () => {
-    setData((prev: any) => ({ ...prev, alerts: prev.alerts.map((a: any) => ({ ...a, isRead: true })) }));
+  const markAllAlertsAsRead = async () => {
+    await supabase.from('alerts').update({ is_read: true }).eq('is_read', false);
+    await fetchAll();
   };
 
-  const deleteAlert = (id: string) => {
-    setData((prev: any) => ({ ...prev, alerts: prev.alerts.filter((a: any) => a.id !== id) }));
+  const deleteAlert = async (id: string) => {
+    await supabase.from('alerts').delete().eq('id', id);
+    await fetchAll();
   };
 
-  // Bill Operations
-  const addBill = (bill: Omit<Bill, 'id'>) => {
-    const id = generateId('BIL');
-    setData((prev: any) => ({ ...prev, bills: [...prev.bills, { ...bill, id }] }));
-    return id;
+  // --- Bill CRUD ---
+  const addBill = async (bill: Omit<Bill, 'id'>) => {
+    const { data, error } = await supabase.from('bills').insert({
+      patient_id: bill.patientId || null,
+      patient_name: bill.patientName,
+      amount: bill.amount,
+      status: bill.status,
+      due_date: bill.dueDate,
+      items: bill.items as any,
+      insurance_claim_id: bill.insuranceClaimId || null,
+    }).select('id').single();
+    if (error) throw error;
+    await fetchAll();
+    return data!.id;
   };
 
-  const updateBill = (id: string, updates: Partial<Bill>) => {
-    setData((prev: any) => ({ ...prev, bills: prev.bills.map((b: any) => b.id === id ? { ...b, ...updates } : b) }));
+  const updateBill = async (id: string, updates: Partial<Bill>) => {
+    const dbUpdates: any = {};
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+    if (updates.items !== undefined) dbUpdates.items = updates.items;
+    dbUpdates.updated_at = new Date().toISOString();
+    await supabase.from('bills').update(dbUpdates).eq('id', id);
+    await fetchAll();
   };
 
-  const deleteBill = (id: string) => {
-    setData((prev: any) => ({ ...prev, bills: prev.bills.filter((b: any) => b.id !== id) }));
+  const deleteBill = async (id: string) => {
+    await supabase.from('bills').delete().eq('id', id);
+    await fetchAll();
   };
 
   // Analytics
   const getAnalytics = () => {
-    const totalPatients = data.patients.filter((p: any) => p.status === 'active').length;
-    const totalBeds = data.beds.length;
-    const occupiedBeds = data.beds.filter((b: any) => b.status === 'occupied').length;
+    const totalPatients = patients.filter(p => p.status === 'active').length;
+    const totalBeds = beds.length;
+    const occupiedBeds = beds.filter(b => b.status === 'occupied').length;
     const occupancyRate = totalBeds > 0 ? (occupiedBeds / totalBeds) * 100 : 0;
-    const todayAppointments = data.appointments.filter((a: any) => a.date === new Date().toISOString().split('T')[0]).length;
-    const pendingOrders = data.orders.filter((o: any) => o.status === 'pending').length;
-    const completedOrders = data.orders.filter((o: any) => o.status === 'completed').length;
-    const activeStaff = data.staff.filter((s: any) => s.status === 'active').length;
-    const totalRevenue = data.bills.reduce((s: number, b: any) => s + b.amount, 0);
-    const pendingPayments = data.bills.filter((b: any) => b.status === 'pending').length;
-    return { totalPatients, totalBeds, occupiedBeds, occupancyRate, todayAppointments, pendingOrders, completedOrders, activeStaff, totalRevenue, pendingPayments, unreadAlerts: data.alerts.filter((a: any) => !a.isRead).length };
-  };
-
-  const resetData = () => {
-    const fresh = generateLargeDataset();
-    setData(fresh);
-  };
-
-  const exportAllData = () => data;
-
-  const importData = (imported: any) => {
-    setData(imported);
+    const todayAppointments = appointments.filter(a => a.date === new Date().toISOString().split('T')[0]).length;
+    const pendingOrders = orders.filter(o => o.status === 'pending').length;
+    const completedOrders = orders.filter(o => o.status === 'completed').length;
+    const activeStaff = staff.filter(s => s.status === 'active').length;
+    const totalRevenue = bills.reduce((s, b) => s + b.amount, 0);
+    const pendingPayments = bills.filter(b => b.status === 'pending').length;
+    return { totalPatients, totalBeds, occupiedBeds, occupancyRate, todayAppointments, pendingOrders, completedOrders, activeStaff, totalRevenue, pendingPayments, unreadAlerts: alerts.filter(a => !a.isRead).length };
   };
 
   const value: HospitalDataContextType = {
-    ...data,
+    patients, beds, appointments, orders, medications, staff, alerts, bills, loading,
     addPatient, updatePatient, deletePatient, dischargePatient, updatePatientVitals,
     assignBed, releaseBed, transferPatient, updateBedStatus,
     addAppointment, updateAppointment, deleteAppointment,
@@ -407,7 +708,7 @@ export const HospitalDataProvider: React.FC<{ children: ReactNode }> = ({ childr
     addStaff, updateStaff, deleteStaff,
     addAlert, markAlertAsRead, markAllAlertsAsRead, deleteAlert,
     addBill, updateBill, deleteBill,
-    getAnalytics, resetData, exportAllData, importData
+    getAnalytics, refreshData: fetchAll,
   };
 
   return <HospitalDataContext.Provider value={value}>{children}</HospitalDataContext.Provider>;

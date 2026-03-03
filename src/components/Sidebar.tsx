@@ -3,51 +3,40 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { playSound } from "@/hooks/useSoundSystem";
+import { useAuth, AppRole } from "@/contexts/AuthContext";
 import {
-  Activity,
-  Bed,
-  Calendar,
-  Clock,
-  FileText,
-  Heart,
-  Home,
-  Pill,
-  Settings,
-  Shield,
-  TrendingUp,
-  User,
-  Users,
-  Wallet,
-  Bell,
-  LogOut,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Zap
+  Activity, Bed, Calendar, Clock, FileText, Heart, Home, Pill, Settings,
+  Shield, TrendingUp, User, Users, Wallet, Bell, LogOut, PanelLeftClose,
+  PanelLeftOpen, Zap
 } from "lucide-react";
 
-const navigationItems = [
-  { title: "Dashboard", url: "/", icon: Home },
-  { title: "Patients", url: "/patients", icon: User },
-  { title: "Beds", url: "/beds", icon: Bed },
-  { title: "Appointments", url: "/appointments", icon: Calendar },
-  { title: "Admissions", url: "/admissions", icon: Clock },
-  { title: "Orders", url: "/orders", icon: FileText },
-  { title: "Nursing", url: "/nursing", icon: Heart },
-  { title: "Medications", url: "/medications", icon: Pill },
-  { title: "Billing", url: "/billing", icon: Wallet },
-  { title: "Staff", url: "/staff", icon: Users },
-  { title: "Analytics", url: "/analytics", icon: TrendingUp },
-  { title: "Compliance", url: "/compliance", icon: Shield },
-  { title: "Notifications", url: "/notifications", icon: Bell },
+const allNavigationItems = [
+  { title: "Dashboard", url: "/", icon: Home, roles: ['admin', 'doctor', 'nurse', 'receptionist'] },
+  { title: "Patients", url: "/patients", icon: User, roles: ['admin', 'doctor', 'nurse'] },
+  { title: "Beds", url: "/beds", icon: Bed, roles: ['admin', 'doctor', 'nurse', 'receptionist'] },
+  { title: "Appointments", url: "/appointments", icon: Calendar, roles: ['admin', 'doctor', 'receptionist'] },
+  { title: "Admissions", url: "/admissions", icon: Clock, roles: ['admin', 'receptionist'] },
+  { title: "Orders", url: "/orders", icon: FileText, roles: ['admin', 'doctor'] },
+  { title: "Nursing", url: "/nursing", icon: Heart, roles: ['admin', 'doctor', 'nurse'] },
+  { title: "Medications", url: "/medications", icon: Pill, roles: ['admin', 'doctor', 'nurse'] },
+  { title: "Billing", url: "/billing", icon: Wallet, roles: ['admin', 'receptionist'] },
+  { title: "Staff", url: "/staff", icon: Users, roles: ['admin'] },
+  { title: "Analytics", url: "/analytics", icon: TrendingUp, roles: ['admin', 'doctor'] },
+  { title: "Compliance", url: "/compliance", icon: Shield, roles: ['admin'] },
+  { title: "Notifications", url: "/notifications", icon: Bell, roles: ['admin', 'doctor', 'nurse', 'receptionist'] },
 ];
 
-interface SidebarProps {
-  userRole?: string;
-}
-
-export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
+export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
+  const { role, signOut, user } = useAuth();
+
+  const userRole = role || 'doctor';
+  const roleLabel = userRole.charAt(0).toUpperCase() + userRole.slice(1);
+
+  const navigationItems = allNavigationItems.filter(item => 
+    item.roles.includes(userRole)
+  );
 
   const handleToggle = () => {
     playSound('toggle');
@@ -56,6 +45,11 @@ export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
 
   const handleNavClick = () => {
     playSound('navigate');
+  };
+
+  const handleLogout = async () => {
+    playSound('click');
+    await signOut();
   };
 
   return (
@@ -76,7 +70,7 @@ export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
               </div>
               <div>
                 <h1 className="font-bold text-sm text-gradient-gold">MedFlow</h1>
-                <p className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">{userRole}</p>
+                <p className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">{roleLabel}</p>
               </div>
             </div>
           )}
@@ -144,19 +138,21 @@ export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
 
       {/* Footer */}
       <div className="px-3 py-3 border-t border-border/20 space-y-0.5">
-        <NavLink
-          to="/settings"
-          onClick={handleNavClick}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200",
-            location.pathname === '/settings'
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-          )}
-        >
-          <Settings className="w-[18px] h-[18px] flex-shrink-0" />
-          {!isCollapsed && <span>Settings</span>}
-        </NavLink>
+        {userRole === 'admin' && (
+          <NavLink
+            to="/settings"
+            onClick={handleNavClick}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200",
+              location.pathname === '/settings'
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+            )}
+          >
+            <Settings className="w-[18px] h-[18px] flex-shrink-0" />
+            {!isCollapsed && <span>Settings</span>}
+          </NavLink>
+        )}
         
         <Button
           variant="ghost"
@@ -164,10 +160,7 @@ export function Sidebar({ userRole = "Doctor" }: SidebarProps) {
             "w-full gap-3 text-muted-foreground hover:text-foreground h-9 rounded-xl hover:bg-secondary/40",
             isCollapsed ? "justify-center px-0" : "justify-start px-3"
           )}
-          onClick={() => {
-            playSound('click');
-            console.log("Logout clicked");
-          }}
+          onClick={handleLogout}
         >
           <LogOut className="w-[18px] h-[18px] flex-shrink-0" />
           {!isCollapsed && <span className="text-sm">Logout</span>}
