@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { HospitalDataProvider } from "@/contexts/HospitalDataContext";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import Landing from "./pages/Landing";
 import { Dashboard } from "./components/Dashboard";
 import { PatientManagement } from "./components/PatientManagement";
 import { BedManagement } from "./components/BedManagement";
