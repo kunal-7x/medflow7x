@@ -44,7 +44,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
 );
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, isVisitor } = useAuth();
 
   if (loading) {
     return (
@@ -54,9 +54,9 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user && !isVisitor) return <Navigate to="/login" replace />;
   
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
+  if (!isVisitor && allowedRoles && role && !allowedRoles.includes(role)) {
     return <Navigate to="/" replace />;
   }
 
@@ -64,7 +64,7 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
 }
 
 function AppRoutes() {
-  const { user, loading } = useAuth();
+  const { user, loading, isVisitor } = useAuth();
 
   if (loading) {
     return (
@@ -76,7 +76,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/login" element={(user || isVisitor) ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/patients" element={<ProtectedRoute allowedRoles={['admin','doctor','nurse']}><PatientManagement /></ProtectedRoute>} />
       <Route path="/beds" element={<ProtectedRoute><BedManagement /></ProtectedRoute>} />
