@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { HospitalDataProvider } from "@/contexts/HospitalDataContext";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import Landing from "./pages/Landing";
 import { Dashboard } from "./components/Dashboard";
 import { PatientManagement } from "./components/PatientManagement";
 import { BedManagement } from "./components/BedManagement";
@@ -76,6 +77,7 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/landing" element={<Landing />} />
       <Route path="/login" element={(user || isVisitor) ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/patients" element={<ProtectedRoute allowedRoles={['admin','doctor','nurse']}><PatientManagement /></ProtectedRoute>} />
