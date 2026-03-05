@@ -168,6 +168,16 @@
     100% { background-position: -200% 0; }
   }
 
+  @keyframes shimmer-sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
   .hover-lift {
     @apply transition-all duration-300 ease-out;
   }
