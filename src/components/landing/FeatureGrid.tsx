@@ -47,15 +47,22 @@ export const FeatureGrid = () => (
             viewport={{ once: true, margin: "-40px" }}
             transition={{ delay: i * 0.04 }}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            className="group relative glass-card rounded-2xl p-6 cursor-default"
+            className="group relative glass-card rounded-2xl p-6 cursor-default overflow-hidden"
           >
-            {/* Glow on hover */}
+            {/* Animated gradient border on hover */}
             <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-              style={{ boxShadow: "inset 0 1px 0 hsl(45 93% 58% / 0.1), 0 0 30px hsl(45 93% 58% / 0.05)" }}
+              style={{
+                boxShadow: "inset 0 1px 0 hsl(45 93% 58% / 0.15), 0 0 30px hsl(45 93% 58% / 0.06)",
+                border: "1px solid hsl(45 93% 58% / 0.15)",
+              }}
+            />
+            {/* Gradient sweep */}
+            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"
+              style={{ background: "linear-gradient(90deg, transparent, hsl(45 93% 58% / 0.04), transparent)" }}
             />
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-4">
-                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/15">
+                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/15 group-hover:shadow-[0_0_15px_hsl(45_93%_58%/0.15)] transition-shadow duration-500">
                   <f.icon className="w-5 h-5 text-primary" />
                 </div>
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-mono">

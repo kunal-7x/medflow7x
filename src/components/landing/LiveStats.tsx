@@ -1,4 +1,4 @@
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion, animate } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { TrendingUp, Users, Calendar, HeartPulse } from "lucide-react";
 
@@ -35,19 +35,27 @@ const stats = [
 ];
 
 export const LiveStats = () => (
-  <section className="py-24">
-    <div className="max-w-6xl mx-auto px-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+  <section className="py-24 relative">
+    <div className="absolute inset-0 opacity-30 pointer-events-none"
+      style={{
+        backgroundImage: "radial-gradient(ellipse 80% 50% at 50% 50%, hsl(45 93% 58% / 0.06), transparent)"
+      }}
+    />
+    <div className="max-w-6xl mx-auto px-6 relative">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {stats.map((s, i) => (
           <motion.div
             key={s.label}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.1 }}
-            className="text-center"
+            whileHover={{ scale: 1.02 }}
+            className="glass-card rounded-2xl p-6 text-center group"
           >
-            <s.icon className="w-5 h-5 text-primary mx-auto mb-3" />
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center mx-auto mb-3 group-hover:shadow-[0_0_20px_hsl(45_93%_58%/0.12)] transition-shadow duration-500">
+              <s.icon className="w-5 h-5 text-primary" />
+            </div>
             <div className="text-4xl md:text-5xl font-extrabold tracking-tight mb-1">
               <AnimatedCounter target={s.value} suffix={s.suffix} />
             </div>

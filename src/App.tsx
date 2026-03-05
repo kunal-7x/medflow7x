@@ -58,7 +58,7 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
   if (!user && !isVisitor) return <Navigate to="/login" replace />;
   
   if (!isVisitor && allowedRoles && role && !allowedRoles.includes(role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Layout>{children}</Layout>;
@@ -77,9 +77,10 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/landing" element={<Landing />} />
-      <Route path="/login" element={(user || isVisitor) ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/login" element={(user || isVisitor) ? <Navigate to="/dashboard" replace /> : <Login />} />
+      <Route path="/" element={(user || isVisitor) ? <Navigate to="/dashboard" replace /> : <Landing />} />
+      <Route path="/landing" element={<Navigate to="/" replace />} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/patients" element={<ProtectedRoute allowedRoles={['admin','doctor','nurse']}><PatientManagement /></ProtectedRoute>} />
       <Route path="/beds" element={<ProtectedRoute><BedManagement /></ProtectedRoute>} />
       <Route path="/appointments" element={<ProtectedRoute allowedRoles={['admin','doctor','receptionist']}><Appointments /></ProtectedRoute>} />

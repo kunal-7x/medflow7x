@@ -36,12 +36,17 @@ export const SecurityCompliance = () => (
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.06 }}
-            className="glass-card rounded-2xl p-5 flex items-center gap-4"
+            whileHover={{ y: -2 }}
+            className="group glass-card rounded-2xl p-5 flex items-center gap-4 overflow-hidden relative"
           >
-            <div className="p-2.5 rounded-xl bg-primary/8 border border-primary/10 shrink-0">
-              <b.icon className="w-5 h-5 text-primary" />
+            {/* Hover glow border */}
+            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{ border: "1px solid hsl(45 93% 58% / 0.12)", boxShadow: "0 0 20px hsl(45 93% 58% / 0.04)" }}
+            />
+            <div className="p-2.5 rounded-xl bg-primary/8 border border-primary/10 shrink-0 relative z-10">
+              <b.icon className="w-5 h-5 text-primary group-hover:scale-110 transition-transform duration-300" />
             </div>
-            <div>
+            <div className="relative z-10">
               <div className="font-semibold text-sm">{b.label}</div>
               <div className="text-xs text-muted-foreground">{b.sub}</div>
             </div>

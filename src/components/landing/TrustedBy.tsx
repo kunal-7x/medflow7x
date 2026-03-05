@@ -6,24 +6,25 @@ const logos = [
 ];
 
 export const TrustedBy = () => (
-  <section className="py-16 border-y border-border/30">
+  <section className="py-16 border-y border-border/30 overflow-hidden">
     <div className="max-w-7xl mx-auto px-6">
       <p className="text-center text-xs uppercase tracking-[0.2em] text-muted-foreground mb-8">
         Trusted by leading healthcare institutions
       </p>
-      <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
-        {logos.map((name, i) => (
-          <motion.span
-            key={name}
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.05 }}
-            className="text-sm font-medium text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-default"
-          >
-            {name}
-          </motion.span>
-        ))}
+      <div className="relative">
+        {/* Fade edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+        <div className="flex gap-12 animate-[marquee_30s_linear_infinite]">
+          {[...logos, ...logos].map((name, i) => (
+            <span
+              key={`${name}-${i}`}
+              className="text-sm font-medium text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-default whitespace-nowrap"
+            >
+              {name}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   </section>
