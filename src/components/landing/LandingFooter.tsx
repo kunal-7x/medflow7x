@@ -8,13 +8,19 @@ interface LandingFooterProps {
 
 export const LandingFooter = ({ onRequestDemo }: LandingFooterProps) => (
   <footer className="border-t border-border/30">
-    {/* Final CTA */}
-    <section className="py-24">
+    {/* Final CTA with gradient background */}
+    <section className="py-24 relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(ellipse 60% 50% at 50% 50%, hsl(45 93% 58% / 0.06), transparent),
+            radial-gradient(ellipse 40% 30% at 30% 70%, hsl(200 60% 55% / 0.04), transparent)`
+        }}
+      />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="max-w-3xl mx-auto px-6 text-center"
+        className="max-w-3xl mx-auto px-6 text-center relative z-10"
       >
         <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
           Ready to Transform<br />
