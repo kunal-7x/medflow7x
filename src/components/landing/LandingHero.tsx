@@ -131,7 +131,7 @@ export const LandingHero = ({ onRequestDemo }: LandingHeroProps) => {
         className="fixed top-0 left-0 right-0 z-50 backdrop-blur-2xl border-b border-border/30"
         style={{ background: "hsl(228 14% 6% / 0.8)" }}
       >
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity className="w-6 h-6 text-primary" />
             <span className="text-lg font-bold tracking-tight">MedFlow</span>
@@ -155,7 +155,7 @@ export const LandingHero = ({ onRequestDemo }: LandingHeroProps) => {
       </motion.nav>
 
       {/* Content */}
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-24">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center pt-24">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -177,14 +177,14 @@ export const LandingHero = ({ onRequestDemo }: LandingHeroProps) => {
             <span className="relative z-10">HIPAA Compliant · SOC 2 Certified · 99.99% Uptime</span>
           </motion.div>
 
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[0.95] mb-6">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[0.95] mb-6">
             <span className="block">
               <WordReveal text="Streamline" delay={0.2} />
             </span>
             <span className="block text-gradient-gold">
               <WordReveal text="Patient Care" delay={0.5} />
             </span>
-            <span className="block text-muted-foreground/80 text-4xl md:text-5xl lg:text-6xl font-semibold mt-2">
+            <span className="block text-muted-foreground/80 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold mt-2">
               <WordReveal text="& Hospital Operations" delay={0.8} />
             </span>
           </h1>
@@ -226,7 +226,7 @@ export const LandingHero = ({ onRequestDemo }: LandingHeroProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.6, duration: 0.8 }}
           style={{ perspective: 1000, marginBottom: "2rem" }}
-          className="max-w-md mx-auto"
+          className="max-w-xs sm:max-w-md mx-auto hidden sm:block"
         >
           <motion.div
             style={{ rotateX, rotateY }}
@@ -258,7 +258,7 @@ export const LandingHero = ({ onRequestDemo }: LandingHeroProps) => {
         </motion.div>
 
         {/* Floating metric cards */}
-        <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 max-w-lg mx-auto">
           {[
             { icon: Users, label: "Hospitals", value: "2,400+" },
             { icon: Zap, label: "Avg Response", value: "<200ms" },

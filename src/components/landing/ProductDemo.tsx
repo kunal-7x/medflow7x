@@ -130,7 +130,7 @@ export const ProductDemo = () => {
 
   return (
     <section id="product-demo" className="py-24 relative">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -297,7 +297,16 @@ export const ProductDemo = () => {
                 </div>
               </motion.div>
             </div>
-          </div>
+            {/* Mobile fallback */}
+            <div className="aspect-video bg-background relative overflow-hidden flex sm:hidden items-center justify-center">
+              <div className="text-center p-6">
+                <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-3">
+                  <LayoutDashboard className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-sm font-medium mb-1">Live Dashboard Preview</p>
+                <p className="text-xs text-muted-foreground">Best viewed on desktop for the full interactive experience</p>
+              </div>
+            </div>
 
           {/* Conversion strip */}
           <div className="mt-8 glass-card rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
