@@ -2,9 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { HospitalDataProvider } from "@/contexts/HospitalDataContext";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { motion, AnimatePresence } from "framer-motion";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Landing from "./pages/Landing";
@@ -28,6 +30,23 @@ import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
+const PageTransition = ({ children }: { children: React.ReactNode }) => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-background flex w-full">
     <Sidebar />
@@ -35,10 +54,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => (
       <header className="h-12 flex items-center justify-end px-4 gap-2">
         <SoundToggle />
       </header>
-      <div className="flex-1 overflow-auto p-6 pt-0">
-        <div className="animate-fade-in">
+      <div className="flex-1 overflow-auto p-4 sm:p-6 pt-0">
+        <PageTransition>
           {children}
-        </div>
+        </PageTransition>
       </div>
     </main>
   </div>
@@ -64,6 +83,11 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
   return <Layout>{children}</Layout>;
 }
 
+function ThemeLoader() {
+  useThemeColor();
+  return null;
+}
+
 function AppRoutes() {
   const { user, loading, isVisitor } = useAuth();
 
@@ -77,8 +101,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={(user || isVisitor) ? <Navigate to="/dashboard" replace /> : <Login />} />
-      <Route path="/" element={(user || isVisitor) ? <Navigate to="/dashboard" replace /> : <Landing />} />
+      <Route path="/login" element={(user || isVisitor) ? <Navigate to="/dashboard" replace /> : <PageTransition><Login /></PageTransition>} />
+      <Route path="/" element={(user || isVisitor) ? <Navigate to="/dashboard" replace /> : <PageTransition><Landing /></PageTransition>} />
       <Route path="/landing" element={<Navigate to="/" replace />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/patients" element={<ProtectedRoute allowedRoles={['admin','doctor','nurse']}><PatientManagement /></ProtectedRoute>} />
@@ -107,6 +131,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ThemeLoader />
             <AppRoutes />
           </BrowserRouter>
         </TooltipProvider>

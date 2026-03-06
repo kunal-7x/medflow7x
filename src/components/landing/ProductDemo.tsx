@@ -130,7 +130,7 @@ export const ProductDemo = () => {
 
   return (
     <section id="product-demo" className="py-24 relative">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -175,8 +175,8 @@ export const ProductDemo = () => {
               </div>
             </div>
 
-            {/* Dashboard content */}
-            <div className="aspect-video bg-background relative overflow-hidden">
+            {/* Dashboard content — desktop */}
+            <div className="aspect-video bg-background relative overflow-hidden hidden sm:block">
               <div className="absolute inset-0 flex" style={{ transform: "scale(0.65)", transformOrigin: "top left", width: "153.8%", height: "153.8%", pointerEvents: "none" }}>
                 {/* Sidebar */}
                 <div className="w-14 bg-card border-r border-border/30 flex flex-col items-center py-4 gap-3">
@@ -200,7 +200,6 @@ export const ProductDemo = () => {
 
                 {/* Main content */}
                 <div className="flex-1 p-4 overflow-hidden">
-                  {/* Header */}
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <div className="text-sm font-semibold">Dashboard</div>
@@ -212,7 +211,6 @@ export const ProductDemo = () => {
                     </div>
                   </div>
 
-                  {/* Stat cards */}
                   <div className="grid grid-cols-4 gap-2 mb-4">
                     {[
                       { icon: HeartPulse, val: 847, suffix: "", label: "Total Patients", color: "text-primary" },
@@ -236,23 +234,15 @@ export const ProductDemo = () => {
                     ))}
                   </div>
 
-                  {/* Charts + Table */}
                   <div className="grid grid-cols-5 gap-3">
-                    {/* Bar chart */}
                     <div className="col-span-2 rounded-xl bg-card border border-border/30 p-3">
                       <div className="text-[9px] font-medium mb-2">Weekly Admissions</div>
-                      <div className="h-16">
-                        {inView && <AnimatedBarChart />}
-                      </div>
+                      <div className="h-16">{inView && <AnimatedBarChart />}</div>
                     </div>
-                    {/* Line chart */}
                     <div className="col-span-2 rounded-xl bg-card border border-border/30 p-3">
                       <div className="text-[9px] font-medium mb-2">Patient Recovery Trend</div>
-                      <div className="h-16">
-                        {inView && <AnimatedLineChart />}
-                      </div>
+                      <div className="h-16">{inView && <AnimatedLineChart />}</div>
                     </div>
-                    {/* Mini stats */}
                     <div className="col-span-1 rounded-xl bg-card border border-border/30 p-3 flex flex-col justify-between">
                       <div className="text-[9px] font-medium">Quick Stats</div>
                       <div className="space-y-2">
@@ -268,7 +258,6 @@ export const ProductDemo = () => {
                     </div>
                   </div>
 
-                  {/* Patient table */}
                   <div className="mt-3 rounded-xl bg-card border border-border/30 p-3">
                     <div className="text-[9px] font-medium mb-2">Recent Patients</div>
                     <div className="space-y-0.5">
@@ -296,6 +285,17 @@ export const ProductDemo = () => {
                   </div>
                 </div>
               </motion.div>
+            </div>
+
+            {/* Mobile fallback */}
+            <div className="aspect-video bg-background relative overflow-hidden flex sm:hidden items-center justify-center">
+              <div className="text-center p-6">
+                <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-3">
+                  <LayoutDashboard className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-sm font-medium mb-1">Live Dashboard Preview</p>
+                <p className="text-xs text-muted-foreground">Best viewed on desktop for the full interactive experience</p>
+              </div>
             </div>
           </div>
 
