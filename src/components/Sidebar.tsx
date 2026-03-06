@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 const allNavigationItems = [
-  { title: "Dashboard", url: "/", icon: Home, roles: ['admin', 'doctor', 'nurse', 'receptionist'] },
+  { title: "Dashboard", url: "/dashboard", icon: Home, roles: ['admin', 'doctor', 'nurse', 'receptionist'] },
   { title: "Patients", url: "/patients", icon: User, roles: ['admin', 'doctor', 'nurse'] },
   { title: "Beds", url: "/beds", icon: Bed, roles: ['admin', 'doctor', 'nurse', 'receptionist'] },
   { title: "Appointments", url: "/appointments", icon: Calendar, roles: ['admin', 'doctor', 'receptionist'] },
