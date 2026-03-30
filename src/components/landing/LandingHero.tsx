@@ -45,6 +45,9 @@ export const LandingHero = ({ onRequestDemo }: LandingHeroProps) => {
   const rotateX = useTransform(mouseY, [-300, 300], [8, -8]);
   const rotateY = useTransform(mouseX, [-300, 300], [-8, 8]);
 
+  const accentIndex = parseInt(localStorage.getItem('medflow-theme-color') || '0', 10);
+  const accentColor = getPresetColor(themePresets[accentIndex]?.label || 'Gold');
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
