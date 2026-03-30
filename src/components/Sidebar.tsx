@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { playSound } from "@/hooks/useSoundSystem";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
+import { getPresetColor, themePresets } from "@/hooks/useThemeColor";
 import {
   Activity, Bed, Calendar, Clock, FileText, Heart, Home, Pill, Settings,
   Shield, TrendingUp, User, Users, Wallet, Bell, LogOut, PanelLeftClose,
