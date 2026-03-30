@@ -2,6 +2,7 @@ import { motion, useMotionValue, useTransform, useScroll } from "framer-motion";
 import { ArrowRight, Play, Activity, Shield, Users, Zap, ChevronDown, LayoutDashboard, HeartPulse, BedDouble } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRef, useMemo } from "react";
+import { getPresetColor, themePresets } from "@/hooks/useThemeColor";
 
 interface LandingHeroProps {
   onRequestDemo: () => void;

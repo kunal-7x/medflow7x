@@ -79,7 +79,7 @@ export function Sidebar() {
             </div>
           )}
           {isCollapsed && (
-            <div className="w-8 h-8 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow mx-auto">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-glow mx-auto" style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)` }}>
               <Zap className="w-4 h-4 text-primary-foreground" />
             </div>
           )}
