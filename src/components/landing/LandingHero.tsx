@@ -137,7 +137,9 @@ export const LandingHero = ({ onRequestDemo }: LandingHeroProps) => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Activity className="w-6 h-6 text-primary" />
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)` }}>
+              <Activity className="w-4 h-4 text-primary-foreground" />
+            </div>
             <span className="text-lg font-bold tracking-tight">MedFlow</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
