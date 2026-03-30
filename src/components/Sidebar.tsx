@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { playSound } from "@/hooks/useSoundSystem";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
+import { getPresetColor, themePresets } from "@/hooks/useThemeColor";
 import {
   Activity, Bed, Calendar, Clock, FileText, Heart, Home, Pill, Settings,
   Shield, TrendingUp, User, Users, Wallet, Bell, LogOut, PanelLeftClose,
@@ -33,6 +34,9 @@ export function Sidebar() {
 
   const userRole = role || 'doctor';
   const roleLabel = userRole.charAt(0).toUpperCase() + userRole.slice(1);
+
+  const accentIndex = parseInt(localStorage.getItem('medflow-theme-color') || '0', 10);
+  const accentColor = getPresetColor(themePresets[accentIndex]?.label || 'Gold');
 
   const navigationItems = allNavigationItems.filter(item => 
     item.roles.includes(userRole)
@@ -65,7 +69,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center gap-2.5 animate-fade-in">
-              <div className="w-8 h-8 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-glow" style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)` }}>
                 <Zap className="w-4 h-4 text-primary-foreground" />
               </div>
               <div>
@@ -75,7 +79,7 @@ export function Sidebar() {
             </div>
           )}
           {isCollapsed && (
-            <div className="w-8 h-8 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow mx-auto">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-glow mx-auto" style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)` }}>
               <Zap className="w-4 h-4 text-primary-foreground" />
             </div>
           )}

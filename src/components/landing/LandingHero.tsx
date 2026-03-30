@@ -2,6 +2,7 @@ import { motion, useMotionValue, useTransform, useScroll } from "framer-motion";
 import { ArrowRight, Play, Activity, Shield, Users, Zap, ChevronDown, LayoutDashboard, HeartPulse, BedDouble } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRef, useMemo } from "react";
+import { getPresetColor, themePresets } from "@/hooks/useThemeColor";
 
 interface LandingHeroProps {
   onRequestDemo: () => void;
@@ -43,6 +44,9 @@ export const LandingHero = ({ onRequestDemo }: LandingHeroProps) => {
   const mouseY = useMotionValue(0);
   const rotateX = useTransform(mouseY, [-300, 300], [8, -8]);
   const rotateY = useTransform(mouseX, [-300, 300], [-8, 8]);
+
+  const accentIndex = parseInt(localStorage.getItem('medflow-theme-color') || '0', 10);
+  const accentColor = getPresetColor(themePresets[accentIndex]?.label || 'Gold');
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!cardRef.current) return;
@@ -133,7 +137,9 @@ export const LandingHero = ({ onRequestDemo }: LandingHeroProps) => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Activity className="w-6 h-6 text-primary" />
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)` }}>
+              <Activity className="w-4 h-4 text-primary-foreground" />
+            </div>
             <span className="text-lg font-bold tracking-tight">MedFlow</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
